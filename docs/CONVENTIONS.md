@@ -48,12 +48,13 @@ pages/customer/account/
 | 名称 | 用途 |
 |---|---|
 | `PageContainer` / `PageCard` | 页面骨架：白色页头（标题 + 右侧操作区）+ 灰底内容区 + 白色卡片 |
-| `SearchForm` | 查询区：用字段配置生成，支持 input / select / date / dateRange / custom，自带「更多 / 重置 / 查询」 |
+| `SearchForm` | 查询区：用字段配置生成，支持 input / select / date / month / dateRange / custom，自带「更多 / 重置 / 查询」；收起的字段仍参与查询；需要在查询区外读写条件时，页面用 `Form.useForm()` 创建实例并通过 `form` 传入 |
 | `DataTable` | 表格：带边框、紧凑、横向滚动、统一分页文案；`showIndex` 显示序号列 |
 | `StatusTag` | 按值集（`Lookup`）渲染状态，`variant="dot"` 为圆点样式 |
-| `ImportModal` | Excel 导入弹窗：校验类型与大小，可下载模板 |
+| `ImportModal` | Excel 导入弹窗（原系统样式）：下载模板 + 上传附件，校验类型与大小；导入结果提示由页面处理 |
 | `useTableQuery` | 列表状态：查询条件、分页、加载态；`immediate: false` 用于“先筛选再查询”的页面 |
 | `usePrototypeActions` | 原型里没有落地的动作（导出等）统一给出提示 |
+| `utils/lookup` | `toOptions`（值集 → 下拉选项）、`lookupText`（编码 → 文案） |
 | `mock/utils` | `delay`、`paginate`、`fuzzy`、`exact`、`inRange`、`expand` |
 
 页面里的提示统一用 `App.useApp()` 拿到的 `message` / `modal` / `notification`，不要直接调用静态方法 `message.xxx`（拿不到主题）。

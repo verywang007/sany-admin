@@ -6,7 +6,13 @@ import {
   MenuUnfoldOutlined,
   UserOutlined,
 } from '@ant-design/icons';
-import { APP_TITLE, CURRENT_USER, LANGUAGE_OPTIONS, SITE_OPTIONS, TENANT_OPTIONS } from '@/config/app';
+import {
+  APP_TITLE,
+  CURRENT_USER,
+  LANGUAGE_OPTIONS,
+  SITE_OPTIONS,
+  TENANT_OPTIONS,
+} from '@/config/app';
 import styles from './index.module.css';
 
 interface Props {
@@ -19,7 +25,12 @@ function HeaderSwitch({ value, options }: { value: string; options: string[] }) 
   const items: MenuProps['items'] = options.map((o) => ({ key: o, label: o }));
   return (
     <Dropdown
-      menu={{ items, selectable: true, selectedKeys: [value], onClick: () => message.info('原型环境不支持切换') }}
+      menu={{
+        items,
+        selectable: true,
+        selectedKeys: [value],
+        onClick: () => message.info('原型环境不支持切换'),
+      }}
       trigger={['click']}
     >
       <span className={styles.headerItem}>

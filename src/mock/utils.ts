@@ -11,9 +11,13 @@ export function paginate<T>(rows: T[], { page, pageSize }: PageQuery): PageResul
 
 /** 文本模糊匹配：条件为空视为命中；忽略大小写和首尾空格 */
 export const fuzzy = (value: unknown, keyword: unknown) => {
-  const kw = String(keyword ?? '').trim().toLowerCase();
+  const kw = String(keyword ?? '')
+    .trim()
+    .toLowerCase();
   if (!kw) return true;
-  return String(value ?? '').toLowerCase().includes(kw);
+  return String(value ?? '')
+    .toLowerCase()
+    .includes(kw);
 };
 
 /** 精确匹配：条件为空视为命中 */
@@ -42,7 +46,11 @@ export const inRange = (
  * 用较小的真实样本扩展出更大的列表，便于演示分页；
  * 第 n 份副本会经过 mutate 处理（例如改编号）。
  */
-export function expand<T>(seed: T[], total: number, mutate: (row: T, n: number, i: number) => T): T[] {
+export function expand<T>(
+  seed: T[],
+  total: number,
+  mutate: (row: T, n: number, i: number) => T,
+): T[] {
   const out: T[] = [];
   for (let i = 0; out.length < total; i++) {
     const n = Math.floor(i / seed.length);

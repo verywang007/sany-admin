@@ -19,7 +19,13 @@ function EnterpriseApplyList() {
   const { exportData } = usePrototypeActions();
   return (
     <>
-      <SearchForm fields={fields} alwaysShowMore labelWidth={110} onSearch={search} onReset={reset} />
+      <SearchForm
+        fields={fields}
+        alwaysShowMore
+        labelWidth={110}
+        onSearch={search}
+        onReset={reset}
+      />
       <div style={{ marginBottom: 12 }}>
         <Button type="primary" onClick={() => exportData('申请记录')}>
           导出

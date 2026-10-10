@@ -1,7 +1,6 @@
 import { useState, type ReactNode } from 'react';
-import { Button, Col, DatePicker, Form, Input, Row, Select } from 'antd';
+import { Button, Col, DatePicker, Form, Input, Row, Select, type FormInstance } from 'antd';
 import { DownOutlined, UpOutlined } from '@ant-design/icons';
-import type { Dayjs } from 'dayjs';
 import styles from './index.module.css';
 
 export interface Option {
@@ -11,8 +10,16 @@ export interface Option {
 
 export type SearchField =
   | { type: 'input'; name: string; label: string; placeholder?: string }
-  | { type: 'select'; name: string; label: string; options: Option[]; placeholder?: string; mode?: 'multiple' }
+  | {
+      type: 'select';
+      name: string;
+      label: string;
+      options: Option[];
+      placeholder?: string;
+      mode?: 'multiple';
+    }
   | { type: 'date'; name: string; label: string; placeholder?: string }
+  | { type: 'month'; name: string; label: string; placeholder?: string }
   | {
       type: 'dateRange';
       name: string;
@@ -35,6 +42,8 @@ interface Props {
   alwaysShowMore?: boolean;
   initialValues?: SearchValues;
   labelWidth?: number;
+  /** 由页面持有的表单实例：需要在查询区外读写条件时传入（如统计卡、快捷日期） */
+  form?: FormInstance;
   onSearch: (values: SearchValues) => void;
   onReset?: () => void;
 }
@@ -54,6 +63,14 @@ function renderControl(field: SearchField) {
       );
     case 'date':
       return <DatePicker style={{ width: '100%' }} placeholder={field.placeholder ?? '请选择'} />;
+    case 'month':
+      return (
+        <DatePicker
+          picker="month"
+          style={{ width: '100%' }}
+          placeholder={field.placeholder ?? '请选择月份'}
+        />
+      );
     case 'dateRange':
       return (
         <DatePicker.RangePicker
@@ -70,7 +87,7 @@ function renderControl(field: SearchField) {
 
 /**
  * 通用查询区：栅格排布字段，右下角固定「更多 / 重置 / 查询」。
- * Enter 键触发查询。
+ * Enter 键触发查询；收起时隐藏的字段仍保留取值并参与查询。
  */
 export default function SearchForm({
   fields,
@@ -79,10 +96,12 @@ export default function SearchForm({
   alwaysShowMore = false,
   initialValues,
   labelWidth = 96,
+  form: outerForm,
   onSearch,
   onReset,
 }: Props) {
-  const [form] = Form.useForm();
+  const [innerForm] = Form.useForm();
+  const form = outerForm ?? innerForm;
   const [expanded, setExpanded] = useState(false);
   const limit = columns * collapsedRows;
   const hasMore = fields.length > limit;
@@ -96,7 +115,8 @@ export default function SearchForm({
       initialValues={initialValues}
       labelCol={{ flex: `${labelWidth}px` }}
       wrapperCol={{ flex: '1 1 0', style: { minWidth: 0 } }}
-      onFinish={onSearch}
+      // 取全部值：收起状态下被隐藏的字段条件也要带上
+      onFinish={() => onSearch(form.getFieldsValue(true))}
     >
       <Row gutter={16}>
         {visible.map((f) => (
@@ -129,9 +149,3 @@ export default function SearchForm({
     </Form>
   );
 }
-
-/** 把日期范围字段转成 [起, 止] 字符串，便于 service 层使用 */
-export const rangeToStrings = (v: unknown, format = 'YYYY-MM-DD HH:mm:ss') => {
-  const r = v as [Dayjs | null, Dayjs | null] | undefined;
-  return r ? ([r[0]?.format(format), r[1]?.format(format)] as const) : undefined;
-};

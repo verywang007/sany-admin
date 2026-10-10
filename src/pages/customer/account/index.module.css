@@ -1,0 +1,58 @@
+/* 单元格内编辑：值 + 铅笔图标，hover 变主色 */
+.editCell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.editCell:hover,
+.editCell:hover .editIcon {
+  color: var(--account-primary);
+}
+
+.editValue {
+  max-width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editIcon {
+  margin-left: 5px;
+  color: #666;
+}
+
+/* 页头认证日期快捷选项 */
+.dateOptions {
+  display: flex;
+  gap: 4px;
+  margin: 0 12px;
+}
+
+.dateOption {
+  min-width: 68px;
+  line-height: 26px;
+  padding: 0 10px;
+  text-align: center;
+  border: 1px solid #ccc;
+  border-radius: 2px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.dateOptionActive {
+  border-color: var(--account-primary);
+  color: var(--account-primary);
+}
+
+.ops {
+  display: flex;
+  justify-content: center;
+  flex-wrap: nowrap;
+}
+
+/* --account-primary 由页面根节点从 @/theme 的 colors.primary 注入 */
+.root {
+  display: contents;
+}

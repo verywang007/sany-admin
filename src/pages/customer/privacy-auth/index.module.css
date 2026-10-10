@@ -1,0 +1,23 @@
+/* 结果提示条：色值为原型原样（主题中暂无对应 token） */
+.hint {
+  padding: 6px 4px 10px;
+  font-size: 12px;
+  color: #5a6b87;
+  line-height: 18px;
+}
+
+.hint b {
+  color: #1c3f94;
+  font-size: 13px;
+}
+
+.desc {
+  color: #8a99b3;
+  margin-left: 6px;
+}
+
+.pager {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}

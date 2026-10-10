@@ -73,16 +73,19 @@ export default function BasicLayout() {
             height={60}
             gap={[160, 58]}
           >
-            {keys.map((key) => {
-              const { Component } = resolveRoute(key);
-              return (
-                <div key={key} className={styles.pane} hidden={key !== activeKey}>
-                  <Suspense fallback={<Spin className={styles.loading} />}>
-                    <Component />
-                  </Suspense>
-                </div>
-              );
-            })}
+            {/* Watermark 自身 overflow:hidden，滚动放在内层，水印始终铺满可视区 */}
+            <div className={styles.scroller}>
+              {keys.map((key) => {
+                const { Component } = resolveRoute(key);
+                return (
+                  <div key={key} className={styles.pane} hidden={key !== activeKey}>
+                    <Suspense fallback={<Spin className={styles.loading} />}>
+                      <Component />
+                    </Suspense>
+                  </div>
+                );
+              })}
+            </div>
           </Watermark>
         </main>
       </div>

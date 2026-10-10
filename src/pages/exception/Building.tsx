@@ -8,7 +8,9 @@ export default function Building() {
   const { pathname } = useLocation();
   // 页签保持挂载，切到别的页签后 pathname 会变，所以只在挂载时取一次菜单名
   const [name] = useState(() =>
-    pathname.startsWith(BUILDING_PREFIX) ? decodeURIComponent(pathname.slice(BUILDING_PREFIX.length)) : '',
+    pathname.startsWith(BUILDING_PREFIX)
+      ? decodeURIComponent(pathname.slice(BUILDING_PREFIX.length))
+      : '',
   );
   return (
     <Result

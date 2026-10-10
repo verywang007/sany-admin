@@ -75,7 +75,10 @@ export default function SideNav({ collapsed }: Props) {
   const current = FLAT_LEAVES.find((l) => l.path === pathname);
   // 高亮当前页面所在的各级分组
   const selectedKeys = current
-    ? [pathname, ...current.trail.slice(0, -1).map((_, i) => `/${current.trail.slice(0, i + 1).join('/')}`)]
+    ? [
+        pathname,
+        ...current.trail.slice(0, -1).map((_, i) => `/${current.trail.slice(0, i + 1).join('/')}`),
+      ]
     : [];
 
   const searchOptions = useMemo(

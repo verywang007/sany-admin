@@ -28,7 +28,11 @@ export interface TenantApplyQuery {
 }
 
 // 原型共 45 条：样本 20 条，其余复制补齐
-const rows = expand(tenantApplySeed, 45, (r, n, i) => ({ ...r, id: String(i + 1), applyNo: `${r.applyNo}-${n}` }));
+const rows = expand(tenantApplySeed, 45, (r, n, i) => ({
+  ...r,
+  id: String(i + 1),
+  applyNo: `${r.applyNo}-${n}`,
+}));
 
 export const fetchTenantApplyList: ListFetcher<TenantApply, TenantApplyQuery> = async (q) => {
   await delay();

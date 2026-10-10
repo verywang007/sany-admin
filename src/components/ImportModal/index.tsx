@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { App, Modal, Typography, Upload, type UploadFile } from 'antd';
-import { InboxOutlined } from '@ant-design/icons';
+import { App, Form, Modal, Upload, type UploadFile } from 'antd';
+import { DownloadOutlined, InboxOutlined } from '@ant-design/icons';
+import { colors } from '@/theme';
 
 interface Props {
   open: boolean;
@@ -9,20 +10,29 @@ interface Props {
   accept?: string;
   /** 单文件大小上限（MB），默认 50 */
   maxSizeMB?: number;
-  /** 提供则显示「下载模板」 */
-  templateName?: string;
+  /** 模板链接文字；提供则显示「下载导入模板」一行 */
+  templateText?: string;
+  /** 点击模板链接；不传时提示已下载 */
+  onDownloadTemplate?: () => void;
+  /** 未选择文件就点确认时的提示 */
+  emptyTip?: string;
   onCancel: () => void;
-  /** 点击确定后回调，返回 Promise 时按钮显示加载态，resolve 后关闭 */
+  /**
+   * 确认导入。返回 Promise 时按钮显示加载态：resolve 后关闭弹窗，reject 则保持打开。
+   * 导入结果的提示由页面自行处理。
+   */
   onOk: (file: File) => Promise<void> | void;
 }
 
-/** 通用 Excel 导入弹窗：选择单个文件 → 校验类型与大小 → 确认导入 */
+/** 通用 Excel 导入弹窗（与 HZERO 原系统导入弹窗样式一致）：下载模板 + 上传附件 */
 export default function ImportModal({
   open,
   title = '导入',
   accept = '.xls,.xlsx',
   maxSizeMB = 50,
-  templateName,
+  templateText,
+  onDownloadTemplate,
+  emptyTip = '请上传附件',
   onCancel,
   onOk,
 }: Props) {
@@ -30,6 +40,7 @@ export default function ImportModal({
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [loading, setLoading] = useState(false);
   const exts = accept.split(',').map((e) => e.trim().toLowerCase());
+  const extText = exts.map((e) => e.replace('.', '')).join('、');
 
   const close = () => {
     setFileList([]);
@@ -39,55 +50,77 @@ export default function ImportModal({
   const submit = async () => {
     const file = fileList[0]?.originFileObj;
     if (!file) {
-      message.warning('请先选择文件');
+      message.warning(emptyTip);
       return;
     }
     setLoading(true);
     try {
       await onOk(file);
       setFileList([]);
+    } catch {
+      // 失败提示由页面给出，弹窗保持打开以便重新选择
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Modal open={open} title={title} onCancel={close} onOk={submit} confirmLoading={loading} destroyOnHidden>
-      {templateName && (
-        <Typography.Paragraph>
-          请先
-          <Typography.Link onClick={() => message.success(`已下载模板：${templateName}`)}>
-            下载模板
-          </Typography.Link>
-          ，按模板填写后上传。
-        </Typography.Paragraph>
-      )}
-      <Upload.Dragger
-        accept={accept}
-        maxCount={1}
-        fileList={fileList}
-        beforeUpload={(file) => {
-          const ok = exts.some((e) => file.name.toLowerCase().endsWith(e));
-          if (!ok) {
-            message.error(`仅支持 ${exts.join(' / ')} 格式文件`);
-            return Upload.LIST_IGNORE;
-          }
-          if (file.size > maxSizeMB * 1024 * 1024) {
-            message.error(`文件大小不能超过 ${maxSizeMB}M`);
-            return Upload.LIST_IGNORE;
-          }
-          return false;
-        }}
-        onChange={({ fileList: fl }) => setFileList(fl.slice(-1))}
-      >
-        <p className="ant-upload-drag-icon">
-          <InboxOutlined />
-        </p>
-        <p className="ant-upload-text">点击或拖拽文件到此区域</p>
-        <p className="ant-upload-hint">
-          支持 {exts.join(' / ')}，单个文件不超过 {maxSizeMB}M
-        </p>
-      </Upload.Dragger>
+    <Modal
+      open={open}
+      title={title}
+      width={600}
+      onCancel={close}
+      onOk={submit}
+      okText="确认"
+      confirmLoading={loading}
+      destroyOnHidden
+    >
+      <Form labelCol={{ flex: '110px' }} wrapperCol={{ flex: '1 1 0' }}>
+        {templateText && (
+          <Form.Item label="下载导入模板">
+            <a
+              style={{ color: colors.primary }}
+              onClick={() =>
+                onDownloadTemplate
+                  ? onDownloadTemplate()
+                  : message.success(`已下载：${templateText}`)
+              }
+            >
+              <DownloadOutlined style={{ marginRight: 8 }} />
+              {templateText}
+            </a>
+          </Form.Item>
+        )}
+        <Form.Item label="上传附件" required>
+          <Upload.Dragger
+            accept={accept}
+            maxCount={1}
+            fileList={fileList}
+            beforeUpload={(file) => {
+              if (!exts.some((e) => file.name.toLowerCase().endsWith(e))) {
+                message.error(`只能上传${extText}格式文件`);
+                return Upload.LIST_IGNORE;
+              }
+              if (file.size > maxSizeMB * 1024 * 1024) {
+                message.error(`文件不能超过${maxSizeMB}M`);
+                return Upload.LIST_IGNORE;
+              }
+              return false;
+            }}
+            onChange={({ fileList: fl }) => setFileList(fl.slice(-1))}
+          >
+            <p className="ant-upload-drag-icon">
+              <InboxOutlined />
+            </p>
+            <p className="ant-upload-text">
+              将文件拖到此处，或<span style={{ color: colors.primary }}>点击上传</span>
+            </p>
+            <p className="ant-upload-hint">
+              只能上传{extText}格式文件，文件不能超过{maxSizeMB}M
+            </p>
+          </Upload.Dragger>
+        </Form.Item>
+      </Form>
     </Modal>
   );
 }

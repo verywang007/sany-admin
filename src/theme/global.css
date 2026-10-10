@@ -1,6 +1,8 @@
 html,
 body,
-#root {
+#root,
+#root > .ant-app {
+  /* antd <App> 会多包一层 div，也要撑满，否则主布局高度失效、整页滚动 */
   height: 100%;
   margin: 0;
 }
