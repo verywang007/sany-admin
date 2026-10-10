@@ -1,0 +1,7 @@
+.table :global(.ant-table-thead > tr > th) {
+  font-weight: 600;
+}
+
+.table :global(.ant-table-pagination) {
+  margin-bottom: 0 !important;
+}

@@ -1,0 +1,14 @@
+.form :global(.ant-form-item) {
+  margin-bottom: 12px;
+}
+
+.form :global(.ant-form-item-label > label) {
+  color: #555;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 12px;
+}

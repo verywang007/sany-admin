@@ -1,0 +1,212 @@
+.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== 顶栏 ===== */
+.header {
+  height: 48px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  background: #172742;
+  color: #fff;
+  position: relative;
+  z-index: 20;
+}
+
+.brand {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  overflow: hidden;
+  transition: width 0.2s;
+}
+
+.brandLogo {
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #f36b51, #f9ba50);
+}
+
+.brandTitle {
+  margin: 0 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.collapseTrigger {
+  width: 40px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.collapseTrigger:hover,
+.headerItem:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+.headerRight {
+  margin-left: auto;
+  padding-right: 12px;
+  display: flex;
+  align-items: center;
+  height: 48px;
+  color: #d8dce5;
+  font-size: 13px;
+}
+
+.headerItem {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.headerChevron {
+  font-size: 10px;
+  color: #c7ced9;
+}
+
+.headerDivider {
+  width: 1px;
+  height: 16px;
+  background: rgba(213, 218, 224, 0.4);
+  margin: 0 2px;
+}
+
+.headerIcon {
+  font-size: 16px;
+  color: #d8dce5;
+}
+
+.avatar {
+  background: #7bb1ff;
+}
+
+/* ===== 主体 ===== */
+.body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.nav {
+  flex: none;
+  background: #1e3255;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: width 0.2s;
+  scrollbar-width: none;
+}
+
+.nav::-webkit-scrollbar {
+  display: none;
+}
+
+.navSearch {
+  padding: 8px 16px;
+}
+
+.navSearchSelect {
+  width: 100%;
+  background: #425370;
+  border-radius: 2px;
+}
+
+.navSearchSelect :global(.ant-select-selection-placeholder),
+.navSearchSelect :global(.ant-select-selection-search-input) {
+  color: #b5bfd0 !important;
+  font-size: 12px;
+}
+
+.navMenu {
+  border-inline-end: none !important;
+}
+
+.navMenu > :global(.ant-menu-submenu) > :global(.ant-menu-submenu-title) {
+  margin: 0;
+  width: 100%;
+  border-left: 3px solid transparent;
+}
+
+/* 当前页面所在的一级模块：青色渐变 */
+.navMenu > :global(.ant-menu-submenu-selected) > :global(.ant-menu-submenu-title) {
+  background: linear-gradient(90deg, #1f4364, #28b7c8);
+  border-left-color: #35c6e8;
+  color: #fff;
+}
+
+.navMenuCollapsed :global(.ant-menu-title-content),
+.navMenuCollapsed :global(.ant-menu-submenu-arrow) {
+  display: none;
+}
+
+.navPopup :global(.ant-menu-item-selected) {
+  border-left: 3px solid #35c6e8;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== 页签栏 ===== */
+.tabs {
+  flex: none;
+  background: #fff;
+  padding: 4px 8px 0;
+  border-bottom: 1px solid #e3e3e3;
+}
+
+.tabs :global(.ant-tabs-nav) {
+  margin: 0 !important;
+}
+
+.tabs :global(.ant-tabs-nav::before) {
+  border-bottom: none !important;
+}
+
+.tabs :global(.ant-tabs-tab) {
+  background: #f0f2f5 !important;
+  border-color: #e3e3e3 !important;
+}
+
+.tabs :global(.ant-tabs-tab-active) {
+  background: #fff !important;
+}
+
+.tabs :global(.anticon-home) {
+  margin-right: 6px;
+}
+
+.content {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.pane {
+  min-height: 100%;
+}
+
+.loading {
+  display: block;
+  padding: 80px 0;
+}
