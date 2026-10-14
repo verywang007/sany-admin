@@ -1,6 +1,10 @@
 import dayjs from 'dayjs';
 import { delay, exact, fuzzy, paginate } from '@/mock/utils';
-import { announcementSeed, INTRANET_HTML } from '@/mock/general-config/announcement';
+import {
+  ADMIN_USER_TOTAL,
+  announcementSeed,
+  INTRANET_HTML,
+} from '@/mock/general-config/announcement';
 import { LANGS, type LangCode } from '@/components/LangTabs/langs';
 import type { ListFetcher } from '@/types/common';
 
@@ -10,13 +14,14 @@ export type AnnouncementStatus = 'DRAFT' | 'SCHEDULED' | 'PUBLISHED' | 'EXPIRED'
 export type EffType = 'IMMEDIATE' | 'SCHEDULED';
 
 export const TOUCH_SYS = '系统通知';
-export const TOUCHES = [TOUCH_SYS, '站内消息', '三一飞书'];
+export const TOUCHES = [TOUCH_SYS, '站内消息'];
 
 export interface Announcement {
   id: string;
   /** 公告编号 GG-yyyyMMdd-序号 */
   no: string;
-  title: string;
+  /** 公告标题，按语言维护（需求变更：标题从基础信息移入「公告信息」的语言版本下） */
+  title: Record<LangCode, string>;
   type: AnnouncementType;
   /** 触达方式 */
   touches: string[];
@@ -32,10 +37,12 @@ export interface Announcement {
   status: AnnouncementStatus;
   publisher: string;
   publishTime: string;
-  /** 以下统计字段原型为预格式化文本 */
-  read: string;
-  reach: string;
-  confirm: string;
+  /**
+   * 确认人数；草稿 / 待生效为 null。
+   * 需求变更：原型的阅读率、触达人数、确认人数为预格式化文本（如「1,054 人已确认」），
+   * 改为只存确认人数，确认率 = 确认人数 / 当前后管用户总数
+   */
+  confirm: number | null;
   /** 正文 HTML，按语言维护 */
   content: Record<LangCode, string>;
   /** 系统通知弹窗的确认项文案 */
@@ -56,8 +63,21 @@ export interface AnnouncementQuery {
 }
 
 const CURRENT_USER = '产品顾问-刘伏旺';
-const EMPTY_STATS = { read: '—', reach: '—', confirm: '—' };
-const PUBLISHED_STATS = { read: '0%', reach: '0 / 1,562 人', confirm: '0 人已确认' };
+const EMPTY_STATS = { confirm: null };
+const PUBLISHED_STATS = { confirm: 0 };
+
+const formatNum = (n: number) => n.toLocaleString('en-US');
+
+/** 当前后管用户总数（只显示数字） */
+export const adminUserTotalText = () => formatNum(ADMIN_USER_TOTAL);
+
+/** 确认人数（只显示数字），未发布为「—」 */
+export const confirmCountText = (r: Pick<Announcement, 'confirm'>) =>
+  r.confirm == null ? '—' : formatNum(r.confirm);
+
+/** 确认率 = 确认人数 / 当前后管用户总数，取整百分比；未发布为「—」 */
+export const confirmRateText = (r: Pick<Announcement, 'confirm'>) =>
+  r.confirm == null ? '—' : `${Math.round((r.confirm / ADMIN_USER_TOTAL) * 100)}%`;
 
 const rows: Announcement[] = JSON.parse(JSON.stringify(announcementSeed)) as Announcement[];
 let seq = 100;
@@ -79,9 +99,12 @@ export function genAnnouncementNo() {
 export const emptyContent = (): Record<LangCode, string> =>
   Object.fromEntries(LANGS.map((l) => [l.code, ''])) as Record<LangCode, string>;
 
+/** 列表、查询、提示语等单一展示处统一取简体中文标题 */
+export const titleOf = (r: Pick<Announcement, 'title'>) => r.title['zh-CN'];
+
 /** 新建默认值（原型 resetForm） */
 export const newAnnouncementForm = (): AnnouncementForm => ({
-  title: '',
+  title: emptyContent(),
   type: 'sys',
   touches: [TOUCH_SYS],
   effType: 'SCHEDULED',
@@ -106,7 +129,7 @@ export const fetchAnnouncementList: ListFetcher<Announcement, AnnouncementQuery>
   // 原型缺陷：「发布时间」为纯文本框且不参与过滤。这里改为日期范围并参与过滤
   const list = rows.filter(
     (r) =>
-      fuzzy(r.title, q.title) &&
+      fuzzy(titleOf(r), q.title) &&
       exact(r.type, q.type) &&
       exact(r.status, q.status) &&
       inPublishRange(r.publishTime, q.publishTime),

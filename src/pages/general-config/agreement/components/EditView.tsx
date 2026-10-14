@@ -196,12 +196,9 @@ export default function EditView({ target, onBack, onSaved, onSwitch }: Props) {
 
       <Card title="基础信息">
         <div className={styles.grid}>
+          {/* 发布编号由系统按「SV+年月日+2位序号」规则自动生成，不允许编辑 */}
           <Field label="发布编号" required>
-            <Input
-              value={form.version}
-              disabled={readOnly}
-              onChange={(e) => set({ version: e.target.value })}
-            />
+            <Input value={form.version} disabled />
           </Field>
           {/* 原型提示为「可多选」，但实际为单选下拉，按原型实现；原型只读模式未禁用该下拉，这里修正 */}
           <Field label="适用站点" required hint="可多选，多站点共用同一份正文">

@@ -34,3 +34,10 @@ export const EDITOR_PLACEHOLDERS: Record<LangCode, string> = {
   'id-ID': 'Silakan masukkan konten pengumuman dalam Bahasa Indonesia',
   'zh-TW': '請輸入繁體中文版公告正文',
 };
+
+export const TITLE_PLACEHOLDERS: Record<LangCode, string> = {
+  'zh-CN': '请输入简体中文版公告标题（不超过 60 字）',
+  'en-US': 'Please enter the notice title in English (max 60 characters)',
+  'id-ID': 'Silakan masukkan judul pengumuman dalam Bahasa Indonesia (maks. 60 karakter)',
+  'zh-TW': '請輸入繁體中文版公告標題（不超過 60 字）',
+};

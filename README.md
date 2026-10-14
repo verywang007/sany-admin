@@ -46,7 +46,11 @@ npm run dev      # 启动开发服务器，浏览器打开 http://localhost:5173
 
 其余菜单保留在侧栏中，点击后显示「建设中」。
 
+**场景目录**：打开 `http://localhost:5173/#/directory`（工作台右上角也有入口），可以按「功能」或「角色」分组查看全部页面，点击卡片直达。分类在 `src/config/directory.ts` 中维护。
+
 ## 目录与规范
+
+想改某个菜单页面时，先看 [CLAUDE.md](CLAUDE.md)：里面有菜单到目录的对照表，以及查询条件、表格列、按钮、弹窗等常见修改的做法。新增复杂页面时，按 [docs/templates/NEW-PAGE-TEMPLATE.md](docs/templates/NEW-PAGE-TEMPLATE.md) 填写需求。
 
 目录结构、新增页面的步骤、通用组件和编码约定见 [docs/CONVENTIONS.md](docs/CONVENTIONS.md)。
 

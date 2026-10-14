@@ -2,13 +2,18 @@ import { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import { App, Button, Checkbox, DatePicker, Input, Radio, Select, Spin, Typography } from 'antd';
 import LangTabs, { type LangCode } from '@/components/LangTabs';
+import { LANGS } from '@/components/LangTabs/langs';
 import StatusTag from '@/components/StatusTag';
 import {
+  adminUserTotalText,
+  confirmCountText,
+  confirmRateText,
   genAnnouncementNo,
   getAnnouncement,
   newAnnouncementForm,
   saveAnnouncementDraft,
   submitAnnouncement,
+  titleOf,
   TOUCHES,
   type Announcement,
   type AnnouncementForm,
@@ -16,6 +21,7 @@ import {
 import {
   ANNOUNCEMENT_STATUS,
   EDITOR_PLACEHOLDERS,
+  TITLE_PLACEHOLDERS,
   TYPE_OPTIONS,
   type EditMode,
 } from '../constants';
@@ -39,11 +45,17 @@ interface Props {
   onSaved: (row: Announcement) => void;
 }
 
-/** 保存草稿与提交发布共用的必填校验（同原型） */
-function validate(form: AnnouncementForm) {
-  if (!form.title.trim()) return '请填写公告标题';
-  if (!form.touches.length) return '触达方式至少勾选一项';
-  if (isBlankHtml(form.content['zh-CN'])) return '请填写简体中文版公告正文';
+/**
+ * 保存草稿与提交发布共用的必填校验。
+ * 需求变更：标题按语言维护，各语言标题均必填；返回出错的语言，便于切到对应页签
+ */
+function validate(form: AnnouncementForm): { msg: string; lang?: LangCode } | null {
+  const noTitle = LANGS.find((l) => !form.title[l.code].trim());
+  if (noTitle) return { msg: `请填写${noTitle.label}版公告标题`, lang: noTitle.code };
+  if (!form.touches.length) return { msg: '触达方式至少勾选一项' };
+  if (isBlankHtml(form.content['zh-CN'])) {
+    return { msg: '请填写简体中文版公告正文', lang: 'zh-CN' };
+  }
   return null;
 }
 
@@ -99,7 +111,8 @@ export default function EditView({ target, onBack, onSaved }: Props) {
   const run = async (kind: 'draft' | 'submit') => {
     const err = validate(form);
     if (err) {
-      message.warning(err);
+      message.warning(err.msg);
+      if (err.lang) setLang(err.lang);
       return;
     }
     setSaving(kind);
@@ -107,7 +120,7 @@ export default function EditView({ target, onBack, onSaved }: Props) {
       const recordId = isNewRecord ? undefined : id;
       if (kind === 'draft') {
         const saved = await saveAnnouncementDraft(recordId, form);
-        message.success(isNewRecord ? `已保存草稿：${saved.title}` : '已保存草稿');
+        message.success(isNewRecord ? `已保存草稿：${titleOf(saved)}` : '已保存草稿');
         onSaved(saved);
       } else {
         const saved = await submitAnnouncement(recordId, form);
@@ -151,15 +164,6 @@ export default function EditView({ target, onBack, onSaved }: Props) {
 
       <Card title="基础信息">
         <div className={styles.grid}>
-          <Field label="公告标题" required full>
-            <Input
-              maxLength={60}
-              placeholder="请输入公告标题（不超过 60 字）"
-              value={form.title}
-              disabled={readOnly}
-              onChange={(e) => set({ title: e.target.value })}
-            />
-          </Field>
           <Field label="公告类型" required>
             <Select
               style={{ width: 200 }}
@@ -232,13 +236,25 @@ export default function EditView({ target, onBack, onSaved }: Props) {
         </div>
       </Card>
 
-      <Card title="公告正文">
+      {/* 需求变更：原「公告正文」卡片改为「公告信息」，公告标题从基础信息移入各语言版本下 */}
+      <Card title="公告信息">
         {/* 原型详情只能看简体中文，且只保存简体中文；这里各语言分别保存，详情也可切换语言查看 */}
         <LangTabs
           value={lang}
           onChange={setLang}
-          hint="正文按语言分别维护，发布前至少填写简体中文版正文"
+          hint="标题和正文按语言分别维护；各语言标题必填，正文至少填写简体中文版"
         />
+        <div className={styles.grid}>
+          <Field label="公告标题" required full>
+            <Input
+              maxLength={60}
+              placeholder={TITLE_PLACEHOLDERS[lang]}
+              value={form.title[lang]}
+              disabled={readOnly}
+              onChange={(e) => set({ title: { ...form.title, [lang]: e.target.value } })}
+            />
+          </Field>
+        </div>
         <RichEditor
           key={lang}
           basic={lang !== 'zh-CN'}
@@ -250,11 +266,12 @@ export default function EditView({ target, onBack, onSaved }: Props) {
       </Card>
 
       {readOnly && row && (
-        <Card title="触达与阅读数据">
+        <Card title="阅读数据">
           <div className={styles.grid}>
-            <Field label="触达人数">{row.reach || '—'}</Field>
-            <Field label="阅读率">{row.read || '—'}</Field>
-            <Field label="确认人数">{row.confirm || '—'}</Field>
+            {/* 需求变更：总用户数为当前后管用户总数，总用户数、确认人数只显示数字 */}
+            <Field label="总用户数">{adminUserTotalText()}</Field>
+            <Field label="确认率">{confirmRateText(row)}</Field>
+            <Field label="确认人数">{confirmCountText(row)}</Field>
             <Field label="发布人">{row.publisher || '—'}</Field>
             <Field label="发布时间">{row.publishTime || '—'}</Field>
             <Field label="强制阅读">{row.force ? '已开启' : '未开启'}</Field>

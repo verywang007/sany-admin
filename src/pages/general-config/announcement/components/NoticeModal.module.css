@@ -77,3 +77,12 @@
   font-size: 14px;
   letter-spacing: 2px;
 }
+
+.missing {
+  margin-bottom: 8px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: #d8872c;
+  background: #fff7e8;
+  border-radius: 4px;
+}

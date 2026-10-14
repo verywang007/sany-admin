@@ -14,3 +14,16 @@ export const LANGS: LangOption[] = [
 ];
 
 export const langLabel = (code: string) => LANGS.find((l) => l.code === code)?.label ?? code;
+
+/**
+ * 系统语言：按浏览器 / 操作系统语言匹配内容语言，匹配不到返回 undefined（由调用方回退默认语言）。
+ * 繁体（zh-TW / zh-HK / zh-Hant）→ 繁體中文；其余 zh → 简体中文；id / in → 印尼语；en → English
+ */
+export function getSystemLang(): LangCode | undefined {
+  const tag = (typeof navigator === 'undefined' ? '' : navigator.language).toLowerCase();
+  if (/^zh-(tw|hk|mo|hant)/.test(tag)) return 'zh-TW';
+  if (tag.startsWith('zh')) return 'zh-CN';
+  if (tag.startsWith('id') || tag.startsWith('in')) return 'id-ID';
+  if (tag.startsWith('en')) return 'en-US';
+  return undefined;
+}

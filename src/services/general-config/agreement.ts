@@ -133,12 +133,18 @@ const POPUP_BODIES: Partial<Record<LangCode, string>> = {
 const byLang = <T>(fn: (code: LangCode) => T) =>
   Object.fromEntries(LANGS.map((l) => [l.code, fn(l.code)])) as Record<LangCode, T>;
 
+/** 隐私政策 / 用户服务协议的文档版本号（固定值，不随发布编号变化） */
+const DOC_VERSIONS: Record<DocKind, string> = {
+  privacy: 'V1.01',
+  service: 'V.100',
+};
+
 /** 原型附录 A 的默认内容；原型中所有记录共用这一份，这里按记录各存一份 */
-function defaultContent(version: string): AgreementContent {
+function defaultContent(): AgreementContent {
   const doc = (kind: DocKind) =>
     byLang<AgreementDoc>((code) => ({
       title: DOC_TITLES[kind][code],
-      version,
+      version: DOC_VERSIONS[kind],
       body: DOC_BODIES[kind][code] ?? '',
       editedAt: code === 'zh-CN' ? '2026-09-29 18:02' : '',
     }));
@@ -156,9 +162,7 @@ const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 
 // ---- 内存数据 ----
 const rows: AgreementRelease[] = clone(agreementSeed);
-const contents = new Map<string, AgreementContent>(
-  rows.map((r) => [r.id, defaultContent(r.version)]),
-);
+const contents = new Map<string, AgreementContent>(rows.map((r) => [r.id, defaultContent()]));
 const logs = new Map<string, AgreementLog[]>(Object.entries(clone(agreementLogSeed)));
 let seq = 100;
 
@@ -179,17 +183,27 @@ const addLog = (id: string, action: string, remark = '—') => {
   logs.set(id, list);
 };
 
+/** 发布编号规则：SV + 年 + 月 + 日 + 当日 2 位自然数序号，如 SV2026101201 */
+const VERSION_PREFIX = 'SV';
+const VERSION_RE = /^SV(\d{8})(\d{2})$/;
+/** 本次会话已发放但尚未落库的编号，避免未保存就再次新建时编号重复 */
+const issuedVersions = new Set<string>();
+
 /**
- * 生成下一个发布编号。
- * 原型缺陷：按 `V{x.x}` 解析 `VS…` 编号恒得 NaN，新编号永远是 V0.1。
- * 这里按现有 VS 编号的数字部分取最大值 +1 递增。
+ * 生成下一个发布编号：`SV{YYYYMMDD}{NN}`。
+ * 序号取「同一天」已有编号的最大值 +1（01、02…），跨天重新从 01 开始。
  */
 function nextVersion() {
-  const max = rows.reduce((m, r) => {
-    const n = Number(r.version.replace(/^VS/, ''));
-    return Number.isFinite(n) && n > m ? n : m;
+  const day = dayjs().format('YYYYMMDD');
+  const max = [...rows.map((r) => r.version), ...issuedVersions].reduce((m, v) => {
+    const hit = VERSION_RE.exec(v);
+    if (!hit || hit[1] !== day) return m;
+    const n = Number(hit[2]);
+    return n > m ? n : m;
   }, 0);
-  return `VS${max + 1}`;
+  const version = `${VERSION_PREFIX}${day}${String(max + 1).padStart(2, '0')}`;
+  issuedVersions.add(version);
+  return version;
 }
 
 export const fetchAgreementList: ListFetcher<AgreementRelease, AgreementQuery> = async (q) => {
@@ -216,7 +230,7 @@ export async function getAgreementDetail(id: string): Promise<AgreementDetail> {
       site: release.sites[0] ?? '新加坡',
       effType: release.effType,
       effectiveTime: release.effectiveTime || DEFAULT_EFFECTIVE_TIME,
-      content: clone(contents.get(id) ?? defaultContent(release.version)),
+      content: clone(contents.get(id) ?? defaultContent()),
     },
     logs: [...(logs.get(id) ?? [])],
   };
@@ -226,7 +240,7 @@ export async function getAgreementDetail(id: string): Promise<AgreementDetail> {
 export async function getNewAgreementForm(): Promise<AgreementForm> {
   await delay(100);
   const version = nextVersion();
-  const content = defaultContent(version);
+  const content = defaultContent();
   LANGS.forEach(({ code }) => {
     if (code === 'zh-CN') return;
     content.privacy[code].body = '';
@@ -242,16 +256,15 @@ export async function getNewAgreementForm(): Promise<AgreementForm> {
   };
 }
 
-/** 基于此版本新建：复制源记录全部内容，发布编号与文档版本号取新编号 */
+/** 基于此版本新建：复制源记录全部内容，仅发布编号取新编号（文档版本号为固定值） */
 export async function getCopyAgreementForm(sourceId: string): Promise<AgreementForm> {
   const { form } = await getAgreementDetail(sourceId);
-  const version = nextVersion();
-  (['privacy', 'service'] as const).forEach((k) =>
-    LANGS.forEach(({ code }) => {
-      form.content[k][code].version = version;
-    }),
-  );
-  return { ...form, version, effType: 'SCHEDULED', effectiveTime: DEFAULT_EFFECTIVE_TIME };
+  return {
+    ...form,
+    version: nextVersion(),
+    effType: 'SCHEDULED',
+    effectiveTime: DEFAULT_EFFECTIVE_TIME,
+  };
 }
 
 const filledLangs = (c: AgreementContent) =>

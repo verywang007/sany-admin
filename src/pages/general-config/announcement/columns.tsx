@@ -3,7 +3,11 @@ import TypeTag from './components/TypeTag';
 import type { TableColumnsType } from 'antd';
 import StatusTag from '@/components/StatusTag';
 import { colors } from '@/theme';
-import type { Announcement } from '@/services/general-config/announcement';
+import {
+  confirmRateText,
+  titleOf,
+  type Announcement,
+} from '@/services/general-config/announcement';
 import { ANNOUNCEMENT_STATUS } from './constants';
 
 export type RowAction = 'view' | 'edit' | 'publish' | 'delete' | 'cancel' | 'copy';
@@ -44,7 +48,14 @@ export function createColumns(
         <Typography.Link onClick={() => onAction('view', r)}>{v}</Typography.Link>
       ),
     },
-    { title: '公告标题', dataIndex: 'title', width: 310, ellipsis: true },
+    {
+      title: '公告标题',
+      key: 'title',
+      width: 310,
+      ellipsis: true,
+      // 标题按语言维护，列表展示简体中文版
+      render: (_, r) => titleOf(r),
+    },
     {
       title: '公告类型',
       dataIndex: 'type',
@@ -80,7 +91,8 @@ export function createColumns(
       render: (v: string) => <StatusTag variant="dot" lookup={ANNOUNCEMENT_STATUS} value={v} />,
     },
     { title: '发布人', dataIndex: 'publisher', width: 110, ellipsis: true },
-    { title: '阅读率', dataIndex: 'read', width: 64 },
+    // 需求变更：阅读率改为确认率
+    { title: '确认率', key: 'confirmRate', width: 64, render: (_, r) => confirmRateText(r) },
     {
       title: '操作',
       key: 'action',

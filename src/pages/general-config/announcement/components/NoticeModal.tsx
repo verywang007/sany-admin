@@ -2,7 +2,44 @@ import { useEffect, useState } from 'react';
 import { App, Button, Checkbox, Modal } from 'antd';
 import { BellFilled } from '@ant-design/icons';
 import type { Announcement } from '@/services/general-config/announcement';
+import { getSystemLang, type LangCode } from '@/components/LangTabs/langs';
+import { isBlankHtml } from '@/utils/html';
 import styles from './NoticeModal.module.css';
+
+/** 弹窗固定文案，随系统语言切换 */
+const UI_TEXT: Record<
+  LangCode,
+  { head: string; ok: string; confirm: string; needConfirm: string; missing: string }
+> = {
+  'zh-CN': {
+    head: '系统通知',
+    ok: '我已知晓',
+    confirm: '我已知晓：已阅读并知晓本公告内容',
+    needConfirm: '请先勾选「我已知晓」，再关闭通知',
+    missing: '当前语言暂缺译文，以下为简体中文版',
+  },
+  'en-US': {
+    head: 'System Notice',
+    ok: 'Got it',
+    confirm: 'I have read and understood this notice',
+    needConfirm: 'Please tick the acknowledgement before closing this notice',
+    missing: 'Translation unavailable for your language. Showing the Simplified Chinese version.',
+  },
+  'id-ID': {
+    head: 'Pemberitahuan Sistem',
+    ok: 'Saya Mengerti',
+    confirm: 'Saya telah membaca dan memahami pengumuman ini',
+    needConfirm: 'Harap centang konfirmasi sebelum menutup pemberitahuan',
+    missing: 'Terjemahan belum tersedia. Menampilkan versi Bahasa Tionghoa Sederhana.',
+  },
+  'zh-TW': {
+    head: '系統通知',
+    ok: '我已知曉',
+    confirm: '我已知曉：已閱讀並知曉本公告內容',
+    needConfirm: '請先勾選「我已知曉」，再關閉通知',
+    missing: '目前語言暫缺譯文，以下為簡體中文版',
+  },
+};
 
 interface Props {
   /** 要预览的公告；为空时关闭 */
@@ -13,13 +50,22 @@ interface Props {
 /**
  * 系统通知弹窗（模拟用户登录后看到的效果）。
  * 原型缺陷修正：
- * 1. 原型内容写死为内网切换公告，这里展示传入公告的标题与简体中文正文；
+ * 1. 原型内容写死为内网切换公告，这里展示传入公告的标题与正文；
  * 2. 原型无论是否强制阅读都要求勾选后才能关闭，这里仅「强制阅读」时才需勾选确认。
+ * 需求变更：弹窗语言按系统语言自动切换（PRD §5.4 R5 / §8 E7）——
+ * 标题、正文取系统语言版本；该语言正文为空时回退简体中文并提示缺译文；
+ * 系统语言无法匹配时按简体中文展示。固定文案同样随系统语言切换，
+ * 自定义确认项文案只有简体中文一份，其他语言使用默认确认文案。
  */
 export default function NoticeModal({ notice, onClose }: Props) {
   const { message } = App.useApp();
   const [checked, setChecked] = useState(false);
   const force = !!notice?.force;
+  const sysLang = getSystemLang() ?? 'zh-CN';
+  const ui = UI_TEXT[sysLang];
+  const missing = !!notice && isBlankHtml(notice.content[sysLang]);
+  const contentLang: LangCode = missing ? 'zh-CN' : sysLang;
+  const confirmText = (sysLang === 'zh-CN' && notice?.confirmText) || ui.confirm;
 
   useEffect(() => {
     if (notice) setChecked(false);
@@ -39,13 +85,13 @@ export default function NoticeModal({ notice, onClose }: Props) {
           <span className={styles.icon}>
             <BellFilled />
           </span>
-          <span className={styles.headTitle}>系统通知</span>
+          <span className={styles.headTitle}>{ui.head}</span>
           <span className={styles.time}>{time}</span>
         </div>
       }
       onCancel={() => {
         if (force && !checked) {
-          message.warning('请先勾选「我已知晓」，再关闭通知');
+          message.warning(ui.needConfirm);
           return;
         }
         onClose();
@@ -55,7 +101,7 @@ export default function NoticeModal({ notice, onClose }: Props) {
           {force && (
             <div className={styles.confirm}>
               <Checkbox checked={checked} onChange={(e) => setChecked(e.target.checked)}>
-                {notice?.confirmText ?? '我已知晓：已阅读并知晓本公告内容'}
+                {confirmText}
               </Checkbox>
             </div>
           )}
@@ -69,17 +115,18 @@ export default function NoticeModal({ notice, onClose }: Props) {
               message.success('已记录本次阅读（原型演示，仅本页生效）');
             }}
           >
-            我已知晓
+            {ui.ok}
           </Button>
         </div>
       }
     >
       {notice && (
         <div className={styles.body}>
-          <div className={styles.title}>{notice.title}</div>
+          {missing && sysLang !== 'zh-CN' && <div className={styles.missing}>{ui.missing}</div>}
+          <div className={styles.title}>{notice.title[contentLang]}</div>
           <div
             className={styles.content}
-            dangerouslySetInnerHTML={{ __html: notice.content['zh-CN'] }}
+            dangerouslySetInnerHTML={{ __html: notice.content[contentLang] }}
           />
         </div>
       )}

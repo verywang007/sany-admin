@@ -1,10 +1,13 @@
 import type { AgreementLog, AgreementRelease } from '@/services/general-config/agreement';
 
-/** 样本数据：来自原型页面，原样保留（字段名按接口口径整理；原型无 effType，统一为定时生效） */
+/**
+ * 样本数据：来自原型页面（字段名按接口口径整理；原型无 effType，统一为定时生效）。
+ * 发布编号按「SV + 年月日 + 当日 2 位序号」规则生成，日期取创建日期。
+ */
 export const agreementSeed: AgreementRelease[] = [
   {
     id: '6',
-    version: 'VS20261012',
+    version: 'SV2026092901',
     sites: ['新加坡'],
     langs: ['zh-CN', 'en-US'],
     has: ['P', 'S', 'C'],
@@ -19,7 +22,7 @@ export const agreementSeed: AgreementRelease[] = [
   },
   {
     id: '5',
-    version: 'VS20260703',
+    version: 'SV2026092801',
     sites: ['新加坡'],
     langs: ['zh-CN', 'en-US'],
     has: ['P', 'S', 'C'],
@@ -34,7 +37,7 @@ export const agreementSeed: AgreementRelease[] = [
   },
   {
     id: '4',
-    version: 'VS20260512',
+    version: 'SV2026092001',
     sites: ['新加坡'],
     langs: ['zh-CN', 'en-US'],
     has: ['P', 'S', 'C'],
@@ -49,7 +52,7 @@ export const agreementSeed: AgreementRelease[] = [
   },
   {
     id: '3',
-    version: 'VS20260302',
+    version: 'SV2026021801',
     sites: ['法兰克福'],
     langs: ['zh-CN', 'en-US', 'id-ID'],
     has: ['P', 'S'],
@@ -64,7 +67,7 @@ export const agreementSeed: AgreementRelease[] = [
   },
   {
     id: '2',
-    version: 'VS20260204',
+    version: 'SV2025102001',
     sites: ['新加坡'],
     langs: ['zh-CN'],
     has: ['P', 'S', 'C'],
@@ -79,7 +82,7 @@ export const agreementSeed: AgreementRelease[] = [
   },
   {
     id: '1',
-    version: 'VS20250101',
+    version: 'SV2025051501',
     sites: ['新加坡'],
     langs: ['zh-CN'],
     has: ['P', 'S'],
