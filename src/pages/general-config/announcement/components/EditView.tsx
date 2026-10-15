@@ -242,7 +242,7 @@ export default function EditView({ target, onBack, onSaved }: Props) {
         <LangTabs
           value={lang}
           onChange={setLang}
-          hint="标题和正文按语言分别维护；各语言标题必填，正文至少填写简体中文版"
+          hint="标题和正文按语言分别维护；正文至少填写简体中文版"
         />
         <div className={styles.grid}>
           <Field label="公告标题" required full>
