@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { App, Button, DatePicker, Form, Pagination } from 'antd';
 import { ExportOutlined } from '@ant-design/icons';
@@ -13,11 +13,18 @@ import {
 import { useTableQuery } from '@/utils/useTableQuery';
 import { usePrototypeActions } from '@/utils/feedback';
 import { columns } from './columns';
-import { CONSENT_TYPE_OPTIONS, EMPTY_TEXT, TERMINAL_OPTIONS } from './constants';
+import {
+  CONSENT_TYPE_OPTIONS,
+  EMPTY_TEXT,
+  isPcConsentType,
+  PC_CONSENT_TYPE_OPTIONS,
+  TERMINAL_OPTIONS,
+} from './constants';
 import { describeFilters } from './describe';
 import styles from './index.module.css';
 
-const fields: SearchField[] = [
+/** 同意类型选项随终端联动：选 PC 时只保留协议类 */
+const buildFields = (terminal: unknown): SearchField[] => [
   { type: 'input', name: 'customerId', label: '客户ID', placeholder: '请输入客户ID' },
   { type: 'input', name: 'alias', label: '客户昵称', placeholder: '请输入客户昵称' },
   { type: 'input', name: 'phone', label: '手机号', placeholder: '请输入手机号' },
@@ -26,7 +33,7 @@ const fields: SearchField[] = [
     type: 'select',
     name: 'consentType',
     label: '同意类型',
-    options: CONSENT_TYPE_OPTIONS,
+    options: terminal === 'PC' ? PC_CONSENT_TYPE_OPTIONS : CONSENT_TYPE_OPTIONS,
     placeholder: '',
   },
   { type: 'input', name: 'version', label: '版本号', placeholder: '请输入版本号' },
@@ -59,6 +66,14 @@ export default function PrivacyAuth() {
 
   // 从「隐私/服务协议管理」点击同意人数跳转过来时带 ?version=，自动按该版本查询
   const [form] = Form.useForm();
+  const terminal = Form.useWatch('terminal', form);
+  const fields = useMemo(() => buildFields(terminal), [terminal]);
+  // 切到 PC 时，已选的 APP 专属类型（位置、相机等）不再有效，清空回「全部」
+  useEffect(() => {
+    if (terminal === 'PC' && !isPcConsentType(form.getFieldValue('consentType'))) {
+      form.setFieldValue('consentType', '');
+    }
+  }, [terminal, form]);
   const [searchParams] = useSearchParams();
   const version = searchParams.get('version');
   useEffect(() => {

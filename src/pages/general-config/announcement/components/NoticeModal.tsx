@@ -9,34 +9,30 @@ import styles from './NoticeModal.module.css';
 /** 弹窗固定文案，随系统语言切换 */
 const UI_TEXT: Record<
   LangCode,
-  { head: string; ok: string; confirm: string; needConfirm: string; missing: string }
+  { head: string; ok: string; confirm: string; missing: string }
 > = {
   'zh-CN': {
     head: '系统通知',
     ok: '我已知晓',
     confirm: '我已知晓：已阅读并知晓本公告内容',
-    needConfirm: '请先勾选「我已知晓」，再关闭通知',
     missing: '当前语言暂缺译文，以下为简体中文版',
   },
   'en-US': {
     head: 'System Notice',
     ok: 'Got it',
     confirm: 'I have read and understood this notice',
-    needConfirm: 'Please tick the acknowledgement before closing this notice',
     missing: 'Translation unavailable for your language. Showing the Simplified Chinese version.',
   },
   'id-ID': {
     head: 'Pemberitahuan Sistem',
     ok: 'Saya Mengerti',
     confirm: 'Saya telah membaca dan memahami pengumuman ini',
-    needConfirm: 'Harap centang konfirmasi sebelum menutup pemberitahuan',
     missing: 'Terjemahan belum tersedia. Menampilkan versi Bahasa Tionghoa Sederhana.',
   },
   'zh-TW': {
     head: '系統通知',
     ok: '我已知曉',
     confirm: '我已知曉：已閱讀並知曉本公告內容',
-    needConfirm: '請先勾選「我已知曉」，再關閉通知',
     missing: '目前語言暫缺譯文，以下為簡體中文版',
   },
 };
@@ -51,7 +47,8 @@ interface Props {
  * 系统通知弹窗（模拟用户登录后看到的效果）。
  * 原型缺陷修正：
  * 1. 原型内容写死为内网切换公告，这里展示传入公告的标题与正文；
- * 2. 原型无论是否强制阅读都要求勾选后才能关闭，这里仅「强制阅读」时才需勾选确认。
+ * 2. 原型的关闭按钮（右上角 ×）在强制阅读时会被拦截，这里改为关闭按钮始终直接关闭弹窗；
+ *    「强制阅读」仅影响底部「我已知晓」按钮的可用状态（勾选后才可点击），不再拦截关闭。
  * 需求变更：弹窗语言按系统语言自动切换（PRD §5.4 R5 / §8 E7）——
  * 标题、正文取系统语言版本；该语言正文为空时回退简体中文并提示缺译文；
  * 系统语言无法匹配时按简体中文展示。固定文案同样随系统语言切换，
@@ -89,13 +86,7 @@ export default function NoticeModal({ notice, onClose }: Props) {
           <span className={styles.time}>{time}</span>
         </div>
       }
-      onCancel={() => {
-        if (force && !checked) {
-          message.warning(ui.needConfirm);
-          return;
-        }
-        onClose();
-      }}
+      onCancel={() => onClose()}
       footer={
         <div className={styles.footer}>
           {force && (

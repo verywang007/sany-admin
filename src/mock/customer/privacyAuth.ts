@@ -20,7 +20,8 @@ export const ALL_TYPES = [
   '无线数据',
   '头像使用',
 ];
-const PC_TYPES = ['隐私协议', '用户服务协议'];
+/** PC 端只有协议类授权 */
+export const PC_TYPES = ['隐私协议', '用户服务协议'];
 const VERSIONS = ['V1.0', 'V1.2', 'V2.0', 'V2.1', 'V2.5', 'V3.0', 'V3.2'];
 const NAMES = [
   '张伟',
