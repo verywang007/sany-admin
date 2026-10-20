@@ -4,7 +4,7 @@ import StatusTag from '@/components/StatusTag';
 import type { AgreementRelease } from '@/services/general-config/agreement';
 import { AGREEMENT_STATUS } from './constants';
 
-export type RowAction = 'view' | 'edit' | 'publish' | 'delete' | 'cancel' | 'copy' | 'agree';
+export type RowAction = 'view' | 'edit' | 'delete' | 'cancel' | 'copy' | 'agree';
 
 const ACTIONS: Record<
   AgreementRelease['status'],
@@ -12,7 +12,6 @@ const ACTIONS: Record<
 > = {
   DRAFT: [
     { key: 'edit', text: '编辑' },
-    { key: 'publish', text: '发布' },
     { key: 'delete', text: '删除', danger: true },
   ],
   SCHEDULED: [

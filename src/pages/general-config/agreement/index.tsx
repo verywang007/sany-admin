@@ -10,7 +10,6 @@ import {
   cancelAgreement,
   deleteAgreement,
   fetchAgreementList,
-  publishAgreement,
   type AgreementRelease,
 } from '@/services/general-config/agreement';
 import { createColumns, type RowAction } from './columns';
@@ -49,11 +48,6 @@ export default function AgreementPage() {
           case 'copy':
             message.success(`已复制 ${row.version} 的全部内容为新草稿`);
             return setEditing({ mode: 'copy', id: row.id });
-          case 'publish':
-            return publishAgreement(row.id).then((r) => {
-              message.success(`已提交发布，${r.effectiveTime} 生效`);
-              reload();
-            });
           case 'cancel':
             return setCancelRow(row);
           case 'delete':
