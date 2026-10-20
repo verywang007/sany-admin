@@ -9,7 +9,6 @@ import {
   deleteAnnouncement,
   fetchAnnouncementList,
   getLoginNotice,
-  publishAnnouncement,
   TOUCH_SYS,
   type Announcement,
 } from '@/services/general-config/announcement';
@@ -93,11 +92,6 @@ export default function AnnouncementPage() {
           case 'copy':
             message.success(`已复制 ${row.no} 的全部内容为新草稿`);
             return setEditing({ mode: 'copy', id: row.id });
-          case 'publish':
-            return publishAnnouncement(row.id).then((r) => {
-              afterPublish(r);
-              reload();
-            });
           case 'cancel':
             return setCancelRow(row);
           case 'delete':

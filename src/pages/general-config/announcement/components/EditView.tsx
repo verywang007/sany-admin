@@ -60,7 +60,7 @@ function validate(form: AnnouncementForm): { msg: string; lang?: LangCode } | nu
 }
 
 export default function EditView({ target, onBack, onSaved }: Props) {
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
   const { mode, id } = target;
   const readOnly = mode === 'view';
   const [form, setForm] = useState<AnnouncementForm>();
@@ -115,18 +115,40 @@ export default function EditView({ target, onBack, onSaved }: Props) {
       if (err.lang) setLang(err.lang);
       return;
     }
+    if (kind === 'submit') {
+      modal.confirm({
+        title: '发布确认',
+        width: 460,
+        content: (
+          <>
+            <div>确定提交发布公告编号 {row?.no ?? no}？提交后将进入「待生效」状态，不再可编辑。</div>
+            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+              {form.effType === 'IMMEDIATE'
+                ? '本次为立即生效，提交后即刻向用户展示。'
+                : `本次为定时生效，将于 ${form.eff} 自动向用户展示。`}
+            </Typography.Text>
+          </>
+        ),
+        okText: '确定发布',
+        onOk: async () => {
+          setSaving('submit');
+          try {
+            const saved = await submitAnnouncement(isNewRecord ? undefined : id, form);
+            if (saved.status === 'SCHEDULED') message.success(`已提交发布，${saved.eff} 生效`);
+            onSaved(saved);
+            onBack();
+          } finally {
+            setSaving(undefined);
+          }
+        },
+      });
+      return;
+    }
     setSaving(kind);
     try {
-      const recordId = isNewRecord ? undefined : id;
-      if (kind === 'draft') {
-        const saved = await saveAnnouncementDraft(recordId, form);
-        message.success(isNewRecord ? `已保存草稿：${titleOf(saved)}` : '已保存草稿');
-        onSaved(saved);
-      } else {
-        const saved = await submitAnnouncement(recordId, form);
-        if (saved.status === 'SCHEDULED') message.success(`已提交发布，${saved.eff} 生效`);
-        onSaved(saved);
-      }
+      const saved = await saveAnnouncementDraft(isNewRecord ? undefined : id, form);
+      message.success(isNewRecord ? `已保存草稿：${titleOf(saved)}` : '已保存草稿');
+      onSaved(saved);
       onBack();
     } finally {
       setSaving(undefined);

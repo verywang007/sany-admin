@@ -10,7 +10,7 @@ import {
 } from '@/services/general-config/announcement';
 import { ANNOUNCEMENT_STATUS } from './constants';
 
-export type RowAction = 'view' | 'edit' | 'publish' | 'delete' | 'cancel' | 'copy';
+export type RowAction = 'view' | 'edit' | 'delete' | 'cancel' | 'copy';
 
 const ACTIONS: Record<
   Announcement['status'],
@@ -18,7 +18,6 @@ const ACTIONS: Record<
 > = {
   DRAFT: [
     { key: 'edit', text: '编辑' },
-    { key: 'publish', text: '发布' },
     { key: 'delete', text: '删除', danger: true },
   ],
   SCHEDULED: [
