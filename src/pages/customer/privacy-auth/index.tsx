@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { App, Button, DatePicker, Form, Pagination } from 'antd';
 import { ExportOutlined } from '@ant-design/icons';
@@ -9,21 +9,26 @@ import {
   fetchPrivacyAuthList,
   normalizeFilters,
   type PrivacyAuthQuery,
+  type PrivacyAuthRecord,
 } from '@/services/customer/privacyAuth';
 import { useTableQuery } from '@/utils/useTableQuery';
 import { usePrototypeActions } from '@/utils/feedback';
-import { columns } from './columns';
+import { getColumns } from './columns';
+import DetailDrawer from './components/DetailDrawer';
 import {
   CONSENT_TYPE_OPTIONS,
   EMPTY_TEXT,
   isPcConsentType,
+  isPcScene,
   PC_CONSENT_TYPE_OPTIONS,
+  PC_SCENE_OPTIONS,
+  SCENE_OPTIONS,
   TERMINAL_OPTIONS,
 } from './constants';
 import { describeFilters } from './describe';
 import styles from './index.module.css';
 
-/** 同意类型选项随终端联动：选 PC 时只保留协议类 */
+/** 同意类型、授权场景选项随终端联动：选 PC 时只保留 PC 端可能出现的值 */
 const buildFields = (terminal: unknown): SearchField[] => [
   { type: 'input', name: 'customerId', label: '客户ID', placeholder: '请输入客户ID' },
   { type: 'input', name: 'alias', label: '客户昵称', placeholder: '请输入客户昵称' },
@@ -34,6 +39,13 @@ const buildFields = (terminal: unknown): SearchField[] => [
     name: 'consentType',
     label: '同意类型',
     options: terminal === 'PC' ? PC_CONSENT_TYPE_OPTIONS : CONSENT_TYPE_OPTIONS,
+    placeholder: '',
+  },
+  {
+    type: 'select',
+    name: 'scene',
+    label: '授权场景',
+    options: terminal === 'PC' ? PC_SCENE_OPTIONS : SCENE_OPTIONS,
     placeholder: '',
   },
   { type: 'input', name: 'version', label: '版本号', placeholder: '请输入版本号' },
@@ -53,7 +65,7 @@ const buildFields = (terminal: unknown): SearchField[] => [
   },
 ];
 
-const initialValues = { terminal: '', consentType: '' };
+const initialValues = { terminal: '', consentType: '', scene: '' };
 
 /** 隐私授权记录：先筛选后查询，进入页面不自动加载 */
 export default function PrivacyAuth() {
@@ -68,12 +80,14 @@ export default function PrivacyAuth() {
   const [form] = Form.useForm();
   const terminal = Form.useWatch('terminal', form);
   const fields = useMemo(() => buildFields(terminal), [terminal]);
-  // 切到 PC 时，已选的 APP 专属类型（位置、相机等）不再有效，清空回「全部」
+  // 切到 PC 时，已选的 APP 专属类型（位置、相机等）和场景（首次启动等）不再有效，清空回「全部」
   useEffect(() => {
-    if (terminal === 'PC' && !isPcConsentType(form.getFieldValue('consentType'))) {
-      form.setFieldValue('consentType', '');
-    }
+    if (terminal !== 'PC') return;
+    if (!isPcConsentType(form.getFieldValue('consentType'))) form.setFieldValue('consentType', '');
+    if (!isPcScene(form.getFieldValue('scene'))) form.setFieldValue('scene', '');
   }, [terminal, form]);
+  const [detail, setDetail] = useState<PrivacyAuthRecord>();
+  const columns = useMemo(() => getColumns(setDetail), []);
   const [searchParams] = useSearchParams();
   const version = searchParams.get('version');
   useEffect(() => {
@@ -96,7 +110,7 @@ export default function PrivacyAuth() {
           size="small"
           icon={<ExportOutlined />}
           onClick={() =>
-            // 推断：原型无导出逻辑；未查询时提示先查询
+            // 推断：原型无导出逻辑；未查询时提示先查询。导出列含全部来源字段，IP 不脱敏（PRD §5.5）
             queried ? exportData('隐私授权记录') : message.warning('请先查询数据后再导出')
           }
         >
@@ -140,6 +154,7 @@ export default function PrivacyAuth() {
           onChange={onChange}
         />
       </div>
+      <DetailDrawer row={detail} onClose={() => setDetail(undefined)} />
     </PageContainer>
   );
 }
