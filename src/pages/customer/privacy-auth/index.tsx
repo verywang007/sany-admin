@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { App, Button, DatePicker, Form, Pagination } from 'antd';
 import { ExportOutlined } from '@ant-design/icons';
@@ -9,12 +9,10 @@ import {
   fetchPrivacyAuthList,
   normalizeFilters,
   type PrivacyAuthQuery,
-  type PrivacyAuthRecord,
 } from '@/services/customer/privacyAuth';
 import { useTableQuery } from '@/utils/useTableQuery';
 import { usePrototypeActions } from '@/utils/feedback';
 import { getColumns } from './columns';
-import DetailDrawer from './components/DetailDrawer';
 import {
   CONSENT_TYPE_OPTIONS,
   EMPTY_TEXT,
@@ -86,8 +84,7 @@ export default function PrivacyAuth() {
     if (!isPcConsentType(form.getFieldValue('consentType'))) form.setFieldValue('consentType', '');
     if (!isPcScene(form.getFieldValue('scene'))) form.setFieldValue('scene', '');
   }, [terminal, form]);
-  const [detail, setDetail] = useState<PrivacyAuthRecord>();
-  const columns = useMemo(() => getColumns(setDetail), []);
+  const columns = useMemo(() => getColumns(), []);
   const [searchParams] = useSearchParams();
   const version = searchParams.get('version');
   useEffect(() => {
@@ -110,7 +107,7 @@ export default function PrivacyAuth() {
           size="small"
           icon={<ExportOutlined />}
           onClick={() =>
-            // 推断：原型无导出逻辑；未查询时提示先查询。导出列含全部来源字段，IP 不脱敏（PRD §5.5）
+            // 推断：原型无导出逻辑；未查询时提示先查询。导出列含全部来源字段（PRD §5.5）
             queried ? exportData('隐私授权记录') : message.warning('请先查询数据后再导出')
           }
         >
@@ -154,7 +151,6 @@ export default function PrivacyAuth() {
           onChange={onChange}
         />
       </div>
-      <DetailDrawer row={detail} onClose={() => setDetail(undefined)} />
     </PageContainer>
   );
 }

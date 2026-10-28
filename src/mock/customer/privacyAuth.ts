@@ -225,8 +225,19 @@ function withSource(row: PrivacyAuthRecord, scene?: string): PrivacyAuthRecord {
 const byTimeDesc = (a: PrivacyAuthRecord, b: PrivacyAuthRecord) =>
   a.consentTime < b.consentTime ? 1 : a.consentTime > b.consentTime ? -1 : 0;
 type BaseRow = Omit<PrivacyAuthRecord, 'id' | keyof Source>;
+/** 只有协议类有版本号；权限类清空（版本号仍照常抽取，不影响随机序列和其他字段） */
 const withId = (rows: BaseRow[], prefix: string, scene?: string): PrivacyAuthRecord[] =>
-  rows.map((r, i) => withSource({ id: `${prefix}${i + 1}`, ...r, ...NO_SOURCE }, scene));
+  rows.map((r, i) =>
+    withSource(
+      {
+        id: `${prefix}${i + 1}`,
+        ...r,
+        version: PC_TYPES.includes(r.consentType) ? r.version : '',
+        ...NO_SOURCE,
+      },
+      scene,
+    ),
+  );
 
 const NOTIFY_SIZE = 24;
 
@@ -314,6 +325,12 @@ export function synthesize(f: SynthesizeFilters): PrivacyAuthRecord[] {
     if (f.consentType && !types.includes(f.consentType)) return [];
     if (f.terminal === 'PC' && !PC_SCENES.includes(f.scene)) return [];
     if (hi < lo) return [];
+  }
+  // 按版本号查询时：只有协议类有版本号
+  if (f.version) {
+    types = types.filter((t) => PC_TYPES.includes(t));
+    if (f.consentType && !types.includes(f.consentType)) return [];
+    if (!types.length) return [];
   }
   const pcTypes = PC_TYPES.filter((t) => types.includes(t));
   const rows: BaseRow[] = [];

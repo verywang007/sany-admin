@@ -30,7 +30,7 @@ export interface PrivacyAuthRecord {
   /** 设备型号（APP）或浏览器（PC） */
   device: string;
   os: string;
-  /** 完整 IP，页面上脱敏展示，导出给全量 */
+  /** 完整 IP，列表和导出都展示原值 */
   ip: string;
   ipRegion: string;
   /** 设备 ID 的 SHA-256，不存明文 */

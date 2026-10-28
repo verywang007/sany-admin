@@ -45,12 +45,8 @@ export const PC_SCENE_OPTIONS: Option[] = [
 
 export const isPcScene = (v: unknown) => !v || PC_SCENES.includes(String(v));
 
-/** 空值占位：来源采集上线前的记录、权限类授权的协议哈希等 */
+/** 空值占位：来源采集上线前的记录、权限类授权的版本号等 */
 export const NONE = '—';
-
-/** IP 脱敏：保留前两段。完整 IP 只在导出文件中提供 */
-export const maskIp = (ip: string) =>
-  ip ? ip.split('.').slice(0, 2).concat('*', '*').join('.') : '';
 
 export const EMPTY_TEXT = {
   /** 未查询（初始态 / 重置后） */

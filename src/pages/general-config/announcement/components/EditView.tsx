@@ -47,15 +47,17 @@ interface Props {
 
 /**
  * 保存草稿与提交发布共用的必填校验。
- * 需求变更：标题按语言维护，各语言标题均必填；返回出错的语言，便于切到对应页签
+ * 需求变更：标题按语言维护，各语言标题均必填；返回出错的语言，便于切到对应页签。
+ * 新建公告（含基于此公告新建）时，失效时间为必填项。
  */
-function validate(form: AnnouncementForm): { msg: string; lang?: LangCode } | null {
+function validate(form: AnnouncementForm, isNew: boolean): { msg: string; lang?: LangCode } | null {
   const noTitle = LANGS.find((l) => !form.title[l.code].trim());
   if (noTitle) return { msg: `请填写${noTitle.label}版公告标题`, lang: noTitle.code };
   if (!form.touches.length) return { msg: '触达方式至少勾选一项' };
   if (isBlankHtml(form.content['zh-CN'])) {
     return { msg: '请填写简体中文版公告正文', lang: 'zh-CN' };
   }
+  if (isNew && !form.exp?.trim()) return { msg: '请填写失效时间' };
   return null;
 }
 
@@ -109,7 +111,7 @@ export default function EditView({ target, onBack, onSaved }: Props) {
   }[mode];
 
   const run = async (kind: 'draft' | 'submit') => {
-    const err = validate(form);
+    const err = validate(form, isNewRecord);
     if (err) {
       message.warning(err.msg);
       if (err.lang) setLang(err.lang);
@@ -225,7 +227,11 @@ export default function EditView({ target, onBack, onSaved }: Props) {
             />
           </Field>
           {/* 原型为无格式校验的文本框，重写为日期时间选择器 */}
-          <Field label="失效时间" hint="可空，为空则长期有效">
+          <Field
+            label="失效时间"
+            required={isNewRecord}
+            hint={isNewRecord ? '必填，请设置公告失效时间' : '可空，为空则长期有效'}
+          >
             <DatePicker
               showTime={{ format: 'HH:mm' }}
               format={TIME_FORMAT}
