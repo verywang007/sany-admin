@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { App, Button, DatePicker, Form, Pagination } from 'antd';
 import { ExportOutlined } from '@ant-design/icons';
@@ -9,10 +9,14 @@ import {
   fetchPrivacyAuthList,
   normalizeFilters,
   type PrivacyAuthQuery,
+  type PrivacyAuthRecord,
 } from '@/services/customer/privacyAuth';
 import { useTableQuery } from '@/utils/useTableQuery';
-import { usePrototypeActions } from '@/utils/feedback';
 import { getColumns } from './columns';
+import { lookupText } from '@/utils/lookup';
+import { langLabel } from '@/components/LangTabs/langs';
+import dayjs from 'dayjs';
+import DetailDrawer from './DetailDrawer';
 import {
   CONSENT_TYPE_OPTIONS,
   EMPTY_TEXT,
@@ -20,6 +24,7 @@ import {
   isPcScene,
   PC_CONSENT_TYPE_OPTIONS,
   PC_SCENE_OPTIONS,
+  SCENE,
   SCENE_OPTIONS,
   TERMINAL_OPTIONS,
 } from './constants';
@@ -65,10 +70,64 @@ const buildFields = (terminal: unknown): SearchField[] => [
 
 const initialValues = { terminal: '', consentType: '', scene: '' };
 
+/** 导出 CSV 的列头（含全部来源字段；导出为明文，见 PRD §5.5） */
+const EXPORT_HEADERS = [
+  '客户ID', '客户昵称', '手机号', 'APP/PC', '同意类型', '版本号', '语言', '授权场景',
+  '客户端版本', 'IP地址', 'IP归属地', '手机品牌', '手机型号', '手机类型',
+  'PC操作系统', 'PC浏览器', '设备ID哈希', '内容哈希', '同意时间', '服务端接收时间',
+];
+
+function toCsvCell(v: unknown): string {
+  const s = v == null ? '' : String(v);
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+/** 下载单个客户的授权记录为 CSV：仅真实记录，内容为明文（不脱敏） */
+function downloadPrivacyAuthCsv(rows: PrivacyAuthRecord[], customerId: string) {
+  const lines = [EXPORT_HEADERS.map(toCsvCell).join(',')];
+  for (const r of rows) {
+    lines.push(
+      [
+        r.customerId,
+        r.alias,
+        r.phone,
+        r.terminal,
+        r.consentType,
+        r.version,
+        r.lang ? langLabel(r.lang) : '',
+        lookupText(SCENE, r.scene),
+        r.clientVersion,
+        r.ip,
+        r.ipRegion,
+        r.phoneBrand,
+        r.phoneModel,
+        r.phoneType,
+        r.pcOs,
+        r.pcBrowser,
+        r.deviceIdHash,
+        r.contentHash,
+        r.consentTime,
+        r.serverTime,
+      ]
+        .map(toCsvCell)
+        .join(','),
+    );
+  }
+  const csv = '﻿' + lines.join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `隐私授权记录_${customerId}_${dayjs().format('YYYYMMDD-HHmmss')}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 /** 隐私授权记录：先筛选后查询，进入页面不自动加载 */
 export default function PrivacyAuth() {
   const { message } = App.useApp();
-  const { exportData } = usePrototypeActions();
   const { tableProps, total, queried, query, search, reset } = useTableQuery(fetchPrivacyAuthList, {
     immediate: false,
   });
@@ -84,7 +143,9 @@ export default function PrivacyAuth() {
     if (!isPcConsentType(form.getFieldValue('consentType'))) form.setFieldValue('consentType', '');
     if (!isPcScene(form.getFieldValue('scene'))) form.setFieldValue('scene', '');
   }, [terminal, form]);
-  const columns = useMemo(() => getColumns(), []);
+  const columns = useMemo(() => getColumns((r) => setDetail(r)), []);
+  const [detail, setDetail] = useState<PrivacyAuthRecord | null>(null);
+  const [exporting, setExporting] = useState(false);
   const [searchParams] = useSearchParams();
   const version = searchParams.get('version');
   useEffect(() => {
@@ -98,6 +159,35 @@ export default function PrivacyAuth() {
   const from = total > 0 ? (current - 1) * pageSize + 1 : 1;
   const to = Math.min(current * pageSize, total);
 
+  /** 导出：仅允许单个客户（按客户ID），不支持批量；仅含真实记录，内容为明文不脱敏 */
+  const onExport = async () => {
+    const values = form.getFieldsValue(true) as PrivacyAuthQuery;
+    const cid = (values.customerId ?? '').trim();
+    if (!cid) {
+      message.warning('请先在「客户ID」填入单个客户后再导出，不允许批量导出');
+      return;
+    }
+    setExporting(true);
+    try {
+      const res = await fetchPrivacyAuthList({ ...values, page: 1, pageSize: 99999 });
+      // 仅保留真实记录（id 以 p 开头），排除「查无结果时现场合成」的演示数据
+      const rows = res.list.filter((r) => r.id.startsWith('p'));
+      if (!rows.length) {
+        message.info(`客户 ${cid} 无授权记录可导出`);
+        return;
+      }
+      // 严格保证只导出单个人：客户ID 模糊匹配可能命中多个客户
+      if (new Set(rows.map((r) => r.customerId)).size > 1) {
+        message.warning('客户ID 匹配到多个客户，请填写完整的单个客户ID后再导出');
+        return;
+      }
+      downloadPrivacyAuthCsv(rows, cid);
+      message.success(`已导出客户 ${cid} 的 ${rows.length} 条授权记录`);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <PageContainer
       title="隐私授权记录"
@@ -106,10 +196,8 @@ export default function PrivacyAuth() {
           type="primary"
           size="small"
           icon={<ExportOutlined />}
-          onClick={() =>
-            // 推断：原型无导出逻辑；未查询时提示先查询。导出列含全部来源字段（PRD §5.5）
-            queried ? exportData('隐私授权记录') : message.warning('请先查询数据后再导出')
-          }
+          loading={exporting}
+          onClick={onExport}
         >
           导出
         </Button>
@@ -151,6 +239,7 @@ export default function PrivacyAuth() {
           onChange={onChange}
         />
       </div>
+      <DetailDrawer record={detail} onClose={() => setDetail(null)} />
     </PageContainer>
   );
 }

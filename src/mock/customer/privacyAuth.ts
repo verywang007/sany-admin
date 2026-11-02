@@ -152,6 +152,24 @@ const APP_DEVICES: [string, string[]][] = [
 ];
 const PC_BROWSERS = ['Chrome 128', 'Chrome 126', 'Edge 129', 'Safari 17.6'];
 const PC_OS = ['Windows 11', 'Windows 10', 'macOS 14'];
+/** 手机型号首词 → 品牌；其余按首词兜底 */
+const BRAND_OF: Record<string, string> = {
+  iPhone: 'Apple',
+  HUAWEI: 'HUAWEI',
+  Xiaomi: 'Xiaomi',
+  OPPO: 'OPPO',
+  vivo: 'vivo',
+  Samsung: 'Samsung',
+};
+function brandOf(model: string): string {
+  return BRAND_OF[model.split(' ')[0]] ?? model.split(' ')[0];
+}
+/** 操作系统 → 手机类型；HarmonyOS 归为「其他」 */
+function phoneTypeOf(os: string): 'IOS' | 'Android' | '其他' {
+  if (os.startsWith('iOS')) return 'IOS';
+  if (os.startsWith('Android')) return 'Android';
+  return '其他';
+}
 const APP_VERSIONS = ['5.3.2', '5.3.0', '5.2.1', '5.1.0', '5.0.4', '4.8.2'];
 const WEB_VERSIONS = ['Web 2.8.0', 'Web 2.7.3', 'Web 2.6.1'];
 /** 区号 → [IP 段, 归属地] */
@@ -169,8 +187,11 @@ type Source = Pick<
   | 'scene'
   | 'clientVersion'
   | 'lang'
-  | 'device'
-  | 'os'
+  | 'phoneBrand'
+  | 'phoneModel'
+  | 'phoneType'
+  | 'pcOs'
+  | 'pcBrowser'
   | 'ip'
   | 'ipRegion'
   | 'deviceIdHash'
@@ -181,8 +202,11 @@ const NO_SOURCE: Source = {
   scene: '',
   clientVersion: '',
   lang: '',
-  device: '',
-  os: '',
+  phoneBrand: '',
+  phoneModel: '',
+  phoneType: '',
+  pcOs: '',
+  pcBrowser: '',
   ip: '',
   ipRegion: '',
   deviceIdHash: '',
@@ -212,8 +236,11 @@ function withSource(row: PrivacyAuthRecord, scene?: string): PrivacyAuthRecord {
     scene: scene || pick(r, candidates.length ? candidates : ['LOGIN']),
     clientVersion: pick(r, app ? APP_VERSIONS : WEB_VERSIONS),
     lang,
-    device: app ? dev : pick(r, PC_BROWSERS),
-    os: app ? pick(r, oses) : pick(r, PC_OS),
+    pcBrowser: app ? '' : pick(r, PC_BROWSERS),
+    pcOs: app ? '' : pick(r, PC_OS),
+    phoneBrand: app ? brandOf(dev) : '',
+    phoneModel: app ? dev : '',
+    phoneType: app ? phoneTypeOf(pick(r, oses)) : '',
     ip: `${ipPrefix}.${Math.floor(r() * 254) + 1}.${Math.floor(r() * 254) + 1}`,
     ipRegion: pick(r, regions),
     deviceIdHash: hex(`${row.customerId}|${row.terminal}`, 8),

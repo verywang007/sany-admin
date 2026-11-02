@@ -27,9 +27,16 @@ export interface PrivacyAuthRecord {
   clientVersion: string;
   /** 用户看到的协议语言，LangCode */
   lang: string;
-  /** 设备型号（APP）或浏览器（PC） */
-  device: string;
-  os: string;
+  /** 手机品牌（APP 端；PC 端为空） */
+  phoneBrand: string;
+  /** 手机型号（APP 端，如 iPhone 15 Pro；PC 端为空） */
+  phoneModel: string;
+  /** 手机类型：IOS / Android / 其他（HarmonyOS 归为其他；PC 端为空） */
+  phoneType: 'IOS' | 'Android' | '其他' | '';
+  /** PC 操作系统（PC 端；APP 端为空） */
+  pcOs: string;
+  /** PC 浏览器（PC 端，如 Chrome 128；APP 端为空） */
+  pcBrowser: string;
   /** 完整 IP，列表和导出都展示原值 */
   ip: string;
   ipRegion: string;
