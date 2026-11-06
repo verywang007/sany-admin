@@ -25,6 +25,7 @@ export default function DetailDrawer({ record, onClose }: Props) {
             <Descriptions.Item label="手机号">{maskPhone(record.phone) || NONE}</Descriptions.Item>
             <Descriptions.Item label="APP/PC">{record.terminal}</Descriptions.Item>
             <Descriptions.Item label="同意类型">{record.consentType}</Descriptions.Item>
+            <Descriptions.Item label="操作按钮">{record.buttonLabel || NONE}</Descriptions.Item>
             <Descriptions.Item label="版本号">{record.version || NONE}</Descriptions.Item>
             <Descriptions.Item label="语言">{record.lang ? langLabel(record.lang) : NONE}</Descriptions.Item>
             <Descriptions.Item label="授权场景">{lookupText(SCENE, record.scene) || NONE}</Descriptions.Item>

@@ -29,6 +29,12 @@ export function getColumns(
     },
     { title: 'APP/PC', dataIndex: 'terminal', width: 100 },
     { title: '同意类型', dataIndex: 'consentType', width: 130 },
+    {
+      title: '操作按钮',
+      dataIndex: 'buttonLabel',
+      width: 180,
+      render: (label?: string) => label || NONE,
+    },
     // 只有协议类（隐私协议、用户服务协议）有版本号，权限类显示占位
     { title: '版本号', dataIndex: 'version', width: 80, render: (v: string) => v || NONE },
     // 授权来源（PRD §5.4）：其余来源字段在行详情中

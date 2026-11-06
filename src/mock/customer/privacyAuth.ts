@@ -15,7 +15,7 @@ const PROTOTYPE_TYPES = [
   '隐私协议',
   '用户服务协议',
   '位置',
-  '个性化广告',
+  '个性化推荐',
   '其他APP活动',
   '相机',
   '无线数据',
@@ -48,7 +48,7 @@ const SCENES_BY_TYPE: Record<string, string[]> = {
   无线数据: ['FIRST_LAUNCH'],
   相机: ['FEATURE_ENTRY'],
   头像使用: ['FEATURE_ENTRY'],
-  个性化广告: ['SETTINGS'],
+  个性化推荐: ['SETTINGS'],
 };
 const scenesOf = (type: string, terminal: string) =>
   (SCENES_BY_TYPE[type] ?? []).filter((s) => terminal !== 'PC' || PC_SCENES.includes(s));
@@ -252,19 +252,34 @@ function withSource(row: PrivacyAuthRecord, scene?: string): PrivacyAuthRecord {
 const byTimeDesc = (a: PrivacyAuthRecord, b: PrivacyAuthRecord) =>
   a.consentTime < b.consentTime ? 1 : a.consentTime > b.consentTime ? -1 : 0;
 type BaseRow = Omit<PrivacyAuthRecord, 'id' | keyof Source>;
+const BUTTON_LABELS: Readonly<Record<string, readonly string[]>> = {
+  隐私协议: ['同意'],
+  用户服务协议: ['同意'],
+  位置: ['允许一次', '使用app时允许', '不允许'],
+  相机: ['允许', '不允许'],
+  无线数据: ['无线局域网与蜂窝网络', '仅限无线局域网', '不允许'],
+  发送通知: ['允许', '不允许'],
+  头像使用: ['允许', '不允许'],
+  个性化推荐: ['允许', '不允许'],
+  其他APP活动: ['要求APP不追踪', '允许'],
+};
+
 /** 只有协议类有版本号；权限类清空（版本号仍照常抽取，不影响随机序列和其他字段） */
 const withId = (rows: BaseRow[], prefix: string, scene?: string): PrivacyAuthRecord[] =>
-  rows.map((r, i) =>
-    withSource(
+  rows.map((r, i) => {
+    const id = `${prefix}${i + 1}`;
+    const labels = BUTTON_LABELS[r.consentType];
+    return withSource(
       {
-        id: `${prefix}${i + 1}`,
+        id,
         ...r,
+        buttonLabel: labels?.[hash(id) % labels.length],
         version: PC_TYPES.includes(r.consentType) ? r.version : '',
         ...NO_SOURCE,
       },
       scene,
-    ),
-  );
+    );
+  });
 
 const NOTIFY_SIZE = 24;
 

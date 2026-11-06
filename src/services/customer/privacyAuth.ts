@@ -14,6 +14,7 @@ export interface PrivacyAuthRecord {
   /** APP / PC */
   terminal: string;
   consentType: string;
+  buttonLabel?: string;
   version: string;
   /** 同意时间 YYYY-MM-DD HH:mm:ss（客户端上报） */
   consentTime: string;
