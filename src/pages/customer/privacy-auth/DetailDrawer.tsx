@@ -59,9 +59,7 @@ export default function DetailDrawer({ record, onClose }: Props) {
 
           <Descriptions column={1} size="small" bordered title="网络与举证">
             <Descriptions.Item label="IP 地址">{maskIp(record.ip) || NONE}</Descriptions.Item>
-            <Descriptions.Item label="IP 归属地">{record.ipRegion || NONE}</Descriptions.Item>
             <Descriptions.Item label="设备ID哈希">{record.deviceIdHash || NONE}</Descriptions.Item>
-            <Descriptions.Item label="内容哈希">{record.contentHash || NONE}</Descriptions.Item>
           </Descriptions>
         </>
       )}

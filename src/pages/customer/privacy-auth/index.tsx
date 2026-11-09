@@ -73,8 +73,8 @@ const initialValues = { terminal: '', consentType: '', scene: '' };
 /** 导出 CSV 的列头（含全部来源字段；导出为明文，见 PRD §5.5） */
 const EXPORT_HEADERS = [
   '客户ID', '客户昵称', '手机号', 'APP/PC', '同意类型', '版本号', '语言', '授权场景',
-  '客户端版本', 'IP地址', 'IP归属地', '手机品牌', '手机型号', '手机类型',
-  'PC操作系统', 'PC浏览器', '设备ID哈希', '内容哈希', '同意时间', '服务端接收时间',
+  '客户端版本', 'IP地址', '手机品牌', '手机型号', '手机类型',
+  'PC操作系统', 'PC浏览器', '设备ID哈希', '同意时间', '服务端接收时间',
 ];
 
 function toCsvCell(v: unknown): string {
@@ -98,14 +98,12 @@ function downloadPrivacyAuthCsv(rows: PrivacyAuthRecord[], customerId: string) {
         lookupText(SCENE, r.scene),
         r.clientVersion,
         r.ip,
-        r.ipRegion,
         r.phoneBrand,
         r.phoneModel,
         r.phoneType,
         r.pcOs,
         r.pcBrowser,
         r.deviceIdHash,
-        r.contentHash,
         r.consentTime,
         r.serverTime,
       ]
