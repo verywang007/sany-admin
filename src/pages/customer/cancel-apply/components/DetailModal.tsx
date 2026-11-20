@@ -1,16 +1,14 @@
 import { Alert, Button, Descriptions, Modal, Tabs, Timeline } from 'antd';
-import { PaperClipOutlined } from '@ant-design/icons';
 import StatusTag from '@/components/StatusTag';
 import { ACCOUNT_CANCEL_SOURCE, ACCOUNT_CANCEL_STATUS } from '@/constants/accountCancel';
-import type { CancelAction, CancelApply } from '@/services/customer/cancelApply';
+import type { CancelApply } from '@/services/customer/cancelApply';
 import { colors } from '@/theme';
-import { cssVars } from '../constants';
+import { cssVars, EMPTY } from '../constants';
 import styles from '../index.module.css';
 
 interface Props {
   row?: CancelApply;
   onClose: () => void;
-  onAction: (row: CancelApply, action: CancelAction) => void;
 }
 
 // 「校验结果」Tab：原型为写死内容，与所选行无关（方案 §7.3 要求按申请动态展示，待接口提供明细）
@@ -41,8 +39,7 @@ function timelineItems(items: { title: string; time: string; desc: string; done?
   }));
 }
 
-export default function DetailModal({ row, onClose, onAction }: Props) {
-  const pending = row?.status === 'PENDING';
+export default function DetailModal({ row, onClose }: Props) {
   const r = row;
 
   return (
@@ -58,16 +55,6 @@ export default function DetailModal({ row, onClose, onAction }: Props) {
         <Button key="close" onClick={onClose}>
           关闭
         </Button>,
-        pending && r && (
-          <Button key="reject" danger onClick={() => onAction(r, 'reject')}>
-            驳回
-          </Button>
-        ),
-        pending && r && (
-          <Button key="approve" type="primary" onClick={() => onAction(r, 'approve')}>
-            审核通过
-          </Button>
-        ),
       ]}
     >
       {r && (
@@ -109,14 +96,23 @@ export default function DetailModal({ row, onClose, onAction }: Props) {
                       ? '用户提出账户注销申请，具体原因详见客服工单。'
                       : `${r.reason}，希望注销账户并删除个人信息。`}
                   </div>
-                  <div className={styles.section}>用户凭证</div>
-                  {/* 原型附件名写死为 CAN-20261006-0018，这里改为随申请单号变化 */}
-                  <div>
-                    <span className={styles.attach}>
-                      <PaperClipOutlined /> 注销申请确认记录_{r.no}.pdf
-                    </span>
-                    <span className={styles.attachSize}>128 KB</span>
-                  </div>
+                  <div className={styles.section}>申请记录</div>
+                  {r.source === 'MANUAL' ? (
+                    <Descriptions
+                      bordered
+                      size="small"
+                      column={2}
+                      items={[
+                        { label: '申请渠道', children: r.channel || EMPTY },
+                        { label: '客服工单号', children: r.ticketNo || EMPTY },
+                        { label: '操作人', children: r.operator || EMPTY },
+                        { label: '验证码验证时间', children: r.verifiedAt || EMPTY },
+                        { label: '客户确认', span: 2, children: '已向客户说明注销影响及 15 天冷静期，客户本人确认申请注销' },
+                      ]}
+                    />
+                  ) : (
+                    <div className={styles.reason}>客户在 APP 内本人提交，已通过绑定手机短信验证码验证身份。</div>
+                  )}
                 </>
               ),
             },
@@ -146,8 +142,8 @@ export default function DetailModal({ row, onClose, onAction }: Props) {
                   </div>
                   <div className={styles.section}>处理建议</div>
                   <div className={styles.reason}>
-                    建议确认用户已知晓积分清零、企业子账户及设备关联解除后，审核通过并进入 15
-                    天冷静期。
+                    注销无平台审核和硬拦截，以上为告知项。申请提交后直接进入 15
+                    天冷静期，冷静期内客户可在 APP 撤销；后管代客的申请也可由管理员撤销。
                   </div>
                 </>
               ),
@@ -170,9 +166,10 @@ export default function DetailModal({ row, onClose, onAction }: Props) {
                         done: true,
                       },
                       {
-                        title: '审核通过，进入冷静期',
-                        time: '待处理',
+                        title: '进入冷静期',
+                        time: r.cool ? `截止 ${r.cool}` : '—',
                         desc: '冷静期默认 15 天，期间用户可主动撤销申请',
+                        done: r.status === 'COOLING' || r.status === 'CANCELLED',
                       },
                       {
                         title: '注销任务执行',
@@ -199,19 +196,51 @@ export default function DetailModal({ row, onClose, onAction }: Props) {
                   </div>
                   <Timeline
                     items={timelineItems([
-                      {
-                        title: '用户提交注销申请',
-                        time: r.apply,
-                        desc: `来源：${sourceText(r)} · IP：103.28.45.16`,
-                        done: true,
-                      },
+                      ...(r.source === 'MANUAL'
+                        ? [
+                            {
+                              title: '客户短信验证码验证通过',
+                              time: r.verifiedAt || r.apply,
+                              desc: '验证码发送至客户已绑定手机',
+                              done: true,
+                            },
+                            {
+                              title: '客服代客提交注销申请',
+                              time: r.apply,
+                              desc: `渠道：${r.channel || EMPTY} · 工单：${r.ticketNo || EMPTY} · 操作人：${r.operator || EMPTY}`,
+                              done: true,
+                            },
+                            {
+                              title: '已短信通知客户',
+                              time: r.apply,
+                              desc: '告知冷静期截止时间及 APP 撤销方式',
+                              done: true,
+                            },
+                          ]
+                        : [
+                            {
+                              title: '用户提交注销申请',
+                              time: r.apply,
+                              desc: `来源：${sourceText(r)} · IP：103.28.45.16`,
+                              done: true,
+                            },
+                          ]),
                       {
                         title: '系统完成前置校验',
                         time: r.apply,
-                        desc: `硬拦截 0 条 · 软提醒 4 条`,
+                        desc: `软提醒 4 条（仅告知，不拦截）`,
                         done: true,
                       },
-                      { title: '运营处理', time: '待处理', desc: '等待客服专员或运营主管处理' },
+                      ...(r.status === 'REVOKED'
+                        ? [
+                            {
+                              title: '注销申请已撤销',
+                              time: EMPTY,
+                              desc: `操作人：${r.operator || '客户本人（APP）'}${r.remark ? ' · 备注：' + r.remark : ''}`,
+                              done: true,
+                            },
+                          ]
+                        : []),
                     ])}
                   />
                 </>

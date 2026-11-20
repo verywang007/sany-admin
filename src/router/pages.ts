@@ -5,6 +5,7 @@ import { lazy, type ComponentType, type LazyExoticComponent } from 'react';
  * 页面按需加载，打开过的页签会保持状态（见 BasicLayout）。
  */
 export const PAGES: Record<string, LazyExoticComponent<ComponentType>> = {
+  '/customer/tenant-cancel': lazy(() => import('@/pages/customer/tenant-cancel')),
   '/customer/tenant-audit': lazy(() => import('@/pages/customer/tenant-audit')),
   '/customer/account': lazy(() => import('@/pages/customer/account')),
   '/customer/cancel-apply': lazy(() => import('@/pages/customer/cancel-apply')),

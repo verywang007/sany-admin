@@ -46,10 +46,11 @@ export interface Account {
   crmCustomerNo: string;
   starNum: number;
   points: number;
-  lockStatusCode: 'UNLOCK' | 'LOCK';
+  lockStatusCode: 'UNLOCK' | 'LOCK' | 'CANCELLED';
   lastLoginTime: string;
   creationDate: string;
   authDate: string;
+  cancelDate: string;
   serveRecruitmentPhone: string;
   /** 已审核设备数 */
   adoptTotal: number;
@@ -98,6 +99,12 @@ const find = (userId: string) => {
   return row;
 };
 
+const assertEditable = (row: Account) => {
+  if (row.lockStatusCode === 'CANCELLED') throw new Error('已注销用户不可操作');
+  return row;
+};
+const findEditable = (userId: string) => assertEditable(find(userId));
+
 export const fetchAccountList: ListFetcher<Account, AccountQuery> = async (q) => {
   await delay();
   const list = rows.filter(
@@ -120,7 +127,9 @@ export const fetchAccountList: ListFetcher<Account, AccountQuery> = async (q) =>
       (fuzzy(r.alias, q.alias) || fuzzy(r.loginName, q.alias)) &&
       exact(String(r.authStatus), q.authStatus) &&
       exact(r.authTypeCode, q.authType) &&
-      exact(r.lockStatusCode, q.lockStatus) &&
+      (q.lockStatus === 'CANCELLED'
+        ? r.lockStatusCode === 'CANCELLED'
+        : r.lockStatusCode !== 'CANCELLED' && exact(r.lockStatusCode, q.lockStatus)) &&
       (!q.deviceState || r.adoptTotal > 0),
   );
   const { orderByKey: key, orderByType: dir } = q;
@@ -154,12 +163,12 @@ export async function fetchCallPrefixes() {
 
 export async function updateEmail(userId: string, email: string) {
   await delay();
-  find(userId).email = email;
+  findEditable(userId).email = email;
 }
 
 export async function updatePhone(userId: string, phone: string, internationalCallPrefix?: string) {
   await delay();
-  Object.assign(find(userId), {
+  Object.assign(findEditable(userId), {
     contactPhone: phone,
     internationalCallPrefix: internationalCallPrefix ?? '',
   });
@@ -172,22 +181,24 @@ export async function updateField(
   value: string,
 ) {
   await delay();
-  find(userId)[field] = value;
+  findEditable(userId)[field] = value;
 }
 
 export async function setLockStatus(userId: string, lock: boolean) {
   await delay();
-  find(userId).lockStatusCode = lock ? 'LOCK' : 'UNLOCK';
+  const row = findEditable(userId);
+  if (row.lockStatusCode === 'CANCELLED') throw new Error('已注销账号不可锁定或激活');
+  row.lockStatusCode = lock ? 'LOCK' : 'UNLOCK';
 }
 
 export async function setDemoStatus(userId: string, demoStatus: 0 | 1) {
   await delay();
-  find(userId).demoStatus = demoStatus;
+  findEditable(userId).demoStatus = demoStatus;
 }
 
 export async function resetPassword(userId: string, password: string) {
   await delay();
-  find(userId);
+  findEditable(userId);
   void password;
 }
 
@@ -221,6 +232,7 @@ export async function authUser(p: AuthParams) {
   await delay();
   const row = rows.find((r) => r.id === p.infoId);
   if (!row) throw new Error('用户不存在');
+  assertEditable(row);
   if (row.crmBindList.some((b) => b.crmCustomerNo === p.crmCustomerNo))
     throw new Error('该客户编码已绑定');
   row.crmBindList.push({ id: `${row.id}-${Date.now()}`, crmCustomerNo: p.crmCustomerNo });
@@ -247,6 +259,7 @@ export async function unbindCrm(customerInfoId: string, customerInfoCrmId: strin
   await delay();
   const row = rows.find((r) => r.id === customerInfoId);
   if (!row) throw new Error('用户不存在');
+  assertEditable(row);
   row.crmBindList = row.crmBindList.filter((b) => b.id !== customerInfoCrmId);
   if (!row.crmBindList.length) clearAuth(row);
   else row.crmCustomerNo = row.crmBindList[0].crmCustomerNo;
@@ -255,6 +268,7 @@ export async function unbindCrm(customerInfoId: string, customerInfoCrmId: strin
 /** 批量解绑（infos/batch-delete/user） */
 export async function batchUnbind(ids: string[]) {
   await delay();
+  rows.filter((r) => ids.includes(r.id)).forEach(assertEditable);
   rows
     .filter((r) => ids.includes(r.id))
     .forEach((r) => {

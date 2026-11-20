@@ -138,7 +138,9 @@ export default function AccountPage() {
   };
 
   const onBatchUnbind = () => {
-    const rows = tableProps.dataSource.filter((r) => selectedKeys.includes(r.id));
+    const rows = tableProps.dataSource.filter(
+      (r) => selectedKeys.includes(r.id) && r.lockStatusCode !== 'CANCELLED',
+    );
     if (!rows.length) return; // 原系统未勾选时不提示
     modal.confirm({
       title: `您确定要解绑以下【${rows.length}】个用户吗？`,
@@ -232,6 +234,7 @@ export default function AccountPage() {
             columnWidth: 50,
             selectedRowKeys: selectedKeys,
             onChange: setSelectedKeys,
+            getCheckboxProps: (record) => ({ disabled: record.lockStatusCode === 'CANCELLED' }),
           }}
           locale={{ emptyText: queried ? '暂无数据' : '请添加筛选条件后查询数据' }}
         />

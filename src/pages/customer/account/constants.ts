@@ -47,7 +47,8 @@ export const LABEL: Lookup = {
 
 export const LOCK_STATUS: Lookup = {
   UNLOCK: { text: '激活' },
-  LOCK: { text: '已锁定' },
+  LOCK: { text: '锁定' },
+  CANCELLED: { text: '已注销' },
 };
 
 /** 页头认证日期快捷选项 */

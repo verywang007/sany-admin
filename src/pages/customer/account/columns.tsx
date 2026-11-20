@@ -51,13 +51,23 @@ export function getColumns(h: ColumnHandlers): TableColumnsType<Account> {
       title: '联系电话',
       dataIndex: 'contactPhone',
       width: 120,
-      render: (v: string, r) => <EditCell text={v} onClick={() => h.onEditPhone(r)} />,
+      render: (v: string, r) =>
+        r.lockStatusCode === 'CANCELLED' ? (
+          v
+        ) : (
+          <EditCell text={v} onClick={() => h.onEditPhone(r)} />
+        ),
     },
     {
       title: '邮箱',
       dataIndex: 'email',
       width: 120,
-      render: (v: string, r) => <EditCell text={v} onClick={() => h.onEditEmail(r)} />,
+      render: (v: string, r) =>
+        r.lockStatusCode === 'CANCELLED' ? (
+          v
+        ) : (
+          <EditCell text={v} onClick={() => h.onEditEmail(r)} />
+        ),
     },
     { title: '大区', dataIndex: 'regionName', width: 100 },
     { title: '国区', dataIndex: 'nationalRegionName', width: 100 },
@@ -68,6 +78,7 @@ export function getColumns(h: ColumnHandlers): TableColumnsType<Account> {
       width: 140,
       render: (v: string, r) => {
         const name = text(ROLE, v);
+        if (r.lockStatusCode === 'CANCELLED') return name;
         return (
           <EditCell
             text={name && Number(r.demoStatus) === 1 ? `${name}·演示用户` : name}
@@ -81,28 +92,34 @@ export function getColumns(h: ColumnHandlers): TableColumnsType<Account> {
       title: '身份',
       dataIndex: 'identity',
       width: 160,
-      render: (v: string, r) => (
-        <EditCell
-          tooltip
-          text={text(IDENTITY, v)}
-          menu={IDENTITY}
-          onSelect={(k) => h.onUpdateField(r, 'identity', k)}
-        />
-      ),
+      render: (v: string, r) =>
+        r.lockStatusCode === 'CANCELLED' ? (
+          text(IDENTITY, v)
+        ) : (
+          <EditCell
+            tooltip
+            text={text(IDENTITY, v)}
+            menu={IDENTITY}
+            onSelect={(k) => h.onUpdateField(r, 'identity', k)}
+          />
+        ),
     },
     {
       title: '印尼试点用户',
       dataIndex: 'label',
       width: 100,
-      render: (v: string, r) => (
-        <EditCell
-          tooltip
-          text={text(LABEL, v)}
-          // 菜单顺序沿用原系统：是、否
-          menu={{ '1': LABEL['1'], '0': LABEL['0'] }}
-          onSelect={(k) => h.onUpdateField(r, 'label', k)}
-        />
-      ),
+      render: (v: string, r) =>
+        r.lockStatusCode === 'CANCELLED' ? (
+          text(LABEL, v)
+        ) : (
+          <EditCell
+            tooltip
+            text={text(LABEL, v)}
+            // 菜单顺序沿用原系统：是、否
+            menu={{ '1': LABEL['1'], '0': LABEL['0'] }}
+            onSelect={(k) => h.onUpdateField(r, 'label', k)}
+          />
+        ),
     },
     { title: 'APP版本号', dataIndex: 'appVersion', width: 120 },
     { title: '用户ID', dataIndex: 'userId', width: 120 },
@@ -129,7 +146,7 @@ export function getColumns(h: ColumnHandlers): TableColumnsType<Account> {
     { title: '账户星星数', dataIndex: 'starNum', width: 120 },
     { title: '积分数', dataIndex: 'points', width: 100 },
     {
-      title: '锁定',
+      title: '状态',
       dataIndex: 'lockStatusCode',
       width: 80,
       render: (v: string) => text(LOCK_STATUS, v),
@@ -137,6 +154,13 @@ export function getColumns(h: ColumnHandlers): TableColumnsType<Account> {
     { title: '最近登录日期', dataIndex: 'lastLoginTime', width: 150, ...sortable },
     { title: '注册日期', dataIndex: 'creationDate', width: 150, ...sortable },
     { title: '认证日期', dataIndex: 'authDate', width: 150, ...sortable },
+    {
+      title: '注销日期',
+      dataIndex: 'cancelDate',
+      width: 150,
+      ...sortable,
+      render: (value: string) => value || '',
+    },
     { title: '客户编码', dataIndex: 'crmCustomerNo', width: 120 },
     { title: '服务召请电话', dataIndex: 'serveRecruitmentPhone', width: 120 },
     {
@@ -146,31 +170,38 @@ export function getColumns(h: ColumnHandlers): TableColumnsType<Account> {
       align: 'center',
       fixed: 'right',
       render: (_, r) => {
+        const disabled = r.lockStatusCode === 'CANCELLED';
         const authed = r.authStatus === 1;
         return (
           <div className={styles.ops}>
             {authed ? (
-              <Button type="link" size="small" onClick={() => h.onCancelAuth(r)}>
+              <Button
+                disabled={disabled}
+                type="link"
+                size="small"
+                onClick={() => h.onCancelAuth(r)}
+              >
                 取消认证
               </Button>
             ) : (
-              <Button type="link" size="small" onClick={() => h.onCertify(r)}>
+              <Button disabled={disabled} type="link" size="small" onClick={() => h.onCertify(r)}>
                 认证用户
               </Button>
             )}
             {/* 已认证且已绑定客户编码：可以继续绑定其他客户编码 */}
             {authed && r.crmBindList.length > 0 && (
-              <Button type="link" size="small" onClick={() => h.onCertify(r)}>
+              <Button disabled={disabled} type="link" size="small" onClick={() => h.onCertify(r)}>
                 认证用户
               </Button>
             )}
-            <Button type="link" size="small" onClick={() => h.onDeviceAudit(r)}>
+            <Button disabled={disabled} type="link" size="small" onClick={() => h.onDeviceAudit(r)}>
               设备绑定审核
             </Button>
             <Dropdown
+              disabled={disabled}
               menu={{ items: moreItems(r), onClick: ({ key }) => h.onMore(r, key as MoreAction) }}
             >
-              <Button type="link" size="small">
+              <Button disabled={disabled} type="link" size="small">
                 更多
                 <CaretDownOutlined />
               </Button>

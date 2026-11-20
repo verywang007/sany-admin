@@ -62,6 +62,7 @@ export const MENU: MenuNode[] = [
       leaf('设备管理员配置', '/customer/device-admin'),
       leaf('组织管理', '/customer/organization'),
       leaf('直接创建租户', '/customer/tenant-create'),
+      leaf('直接注销租户', '/customer/tenant-cancel'),
       leaf('客户认证使用', '/customer/certification'),
     ],
   },

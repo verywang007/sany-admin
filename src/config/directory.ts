@@ -39,6 +39,12 @@ export interface DirectoryEntry {
 }
 
 export const DIRECTORY: Record<string, DirectoryEntry> = {
+  '/customer/tenant-cancel': {
+    group: 'privacy',
+    desc: '经客户验证码验证，代客注销租户并记录授权与数据处置安排',
+    roles: ['cs', 'admin', 'legal'],
+    inferred: true,
+  },
   '/customer/account': {
     group: 'account',
     desc: '客户账号查询，认证 / 取消认证、解绑、锁定与重置密码',
